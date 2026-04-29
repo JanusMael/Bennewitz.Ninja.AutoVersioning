@@ -131,10 +131,10 @@ The package auto-imports `Build.props` via NuGet, which declares `CompilerVisibl
 
 | ID | Severity | Description |
 |---|---|---|
-| `BENNEWITZGEN00` | Warning | Generator is installed but `GenerateAutoVersionedAssemblyInfo` is not set to `true` |
-| `BENNEWITZGEN01` | Warning | Generator threw an unexpected exception |
-| `BENNEWITZGEN02` | Error | `AssemblyCompany` is not configured |
-| `BENNEWITZGEN03` | Error | `AssemblyProduct` is not configured |
+| `BAUTOVERSIONING00` | Warning | Generator is installed but `GenerateAutoVersionedAssemblyInfo` is not set to `true` |
+| `BAUTOVERSIONING01` | Warning | Generator threw an unexpected exception |
+| `BAUTOVERSIONING02` | Error | `AssemblyCompany` is not configured |
+| `BAUTOVERSIONING03` | Error | `AssemblyProduct` is not configured |
 
 ---
 

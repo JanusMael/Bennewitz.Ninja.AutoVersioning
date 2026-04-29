@@ -9,7 +9,7 @@ namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
 public class AssemblyInfoGenerator : IIncrementalGenerator
 {
     private static readonly DiagnosticDescriptor GeneratorNotEnabledDescriptor = new(
-        id: "BENNEWITZGEN00",
+        id: "BAUTOVERSIONING00",
         title: "Assembly Info Generator not enabled",
         messageFormat: "Assembly info generator installed but not enabled.\n"
                      + "Add the following to your .csproj, Directory.Build.props, or any .props file imported by your build:\n"
@@ -27,7 +27,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor GenerationFailedDescriptor = new(
-        id: "BENNEWITZGEN01",
+        id: "BAUTOVERSIONING01",
         title: "Assembly Info Generation Failed",
         messageFormat: "Generator threw an exception: {0}",
         category: "SourceGenerator",
@@ -35,7 +35,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor AssemblyCompanyNotSetDescriptor = new(
-        id: "BENNEWITZGEN02",
+        id: "BAUTOVERSIONING02",
         title: "AssemblyCompany not configured",
         messageFormat: "AssemblyCompany is not set — [assembly: AssemblyCompany] will be empty.\n"
                      + "Add to Directory.Build.props: <AssemblyCompany>YourCompany</AssemblyCompany>",
@@ -44,7 +44,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor AssemblyProductNotSetDescriptor = new(
-        id: "BENNEWITZGEN03",
+        id: "BAUTOVERSIONING03",
         title: "AssemblyProduct not configured",
         messageFormat: "AssemblyProduct is not set — [assembly: AssemblyProduct] will be empty.\n"
                      + "Add to Directory.Build.props: <AssemblyProduct>YourProduct</AssemblyProduct>",
