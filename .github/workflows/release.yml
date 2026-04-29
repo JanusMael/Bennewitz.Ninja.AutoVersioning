@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Extract version from tag
+        # Strips the leading 'v' — e.g. v2026.2.429 → 2026.2.429
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Build
+        run: dotnet build -c Release --nologo /p:Version=${{ env.VERSION }}
+
+      - name: Pack
+        run: dotnet pack -c Release --no-build --nologo /p:Version=${{ env.VERSION }} --output ./packages/Release
+
+      - name: Push to NuGet.org
+        # Requires NUGET_API_KEY in GitHub repo settings: Settings → Secrets and variables → Actions
+        run: dotnet nuget push ./packages/Release/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Bennewitz.Ninja.AutoVersioning</id>
+    <!-- $version$ is replaced by the Version MSBuild property via NuspecProperties in the .csproj -->
+    <version>$version$</version>
+    <authors>Brian Bennewitz</authors>
+    <license type="expression">MIT</license>
+    <copyright>Copyright © 2026 Brian Bennewitz</copyright>
+    <description>Assembly info incremental source generator.</description>
+    <tags>roslyn source-generator assembly-info versioning calver csharp dotnet</tags>
+    <!-- developmentDependency prevents this package appearing as a runtime dependency of consumers -->
+    <developmentDependency>true</developmentDependency>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning</projectUrl>
+    <repository type="git" url="https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning.git" />
+  </metadata>
+  <files>
+    <!--
+      Place only the source generator DLL in the Roslyn analyzer path.
+      $configuration$ and $assemblyName$ are replaced via NuspecProperties in the .csproj.
+    -->
+    <file src="bin\$configuration$\netstandard2.0\$assemblyName$.dll"
+          target="analyzers\dotnet\cs" />
+    <!--
+      Auto-imported by NuGet — wires up CompilerVisibleProperty declarations so consumers
+      don't need to add them manually. Must be named {PackageId}.props.
+      Both paths are required: build\ for single-TFM projects, buildMultiTargeting\ for
+      projects using <TargetFrameworks> (plural).
+    -->
+    <file src="Build.props"
+          target="build\Bennewitz.Ninja.AutoVersioning.props" />
+    <file src="Build.props"
+          target="buildMultiTargeting\Bennewitz.Ninja.AutoVersioning.props" />
+    <!-- Displayed on NuGet.org and in the Visual Studio package manager -->
+    <file src="README.md"
+          target="" />
+  </files>
+</package>

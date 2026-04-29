@@ -1,0 +1,33 @@
+<Project>
+  <!--
+    Copy this file to your solution root as `Directory.Build.props` to configure the generator
+    globally for all projects in your solution (or merge these properties into your existing file).
+
+    The `CompilerVisibleProperty` declarations are handled automatically by the NuGet package's
+    auto-imported Build.props — you do not need to add them here.
+  -->
+  <PropertyGroup>
+    <!-- Enable the generator -->
+    <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>
+    <!-- Required: prevents CS0579 duplicate attribute errors. The SDK emits AssemblyVersion,
+         AssemblyCompany, etc. by default; this generator emits them too, so one must be disabled. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!-- Required: your company and product names -->
+    <AssemblyCompany>YourCompany</AssemblyCompany>
+    <AssemblyProduct>YourProduct</AssemblyProduct>
+
+    <!-- Optional: map CI environment variables to MSBuild properties.
+         These evaluate to empty strings when building locally (no CI env vars present).
+         Replace the $(GITHUB_*) references with your CI provider's equivalents:
+           GitLab:    $(CI_COMMIT_SHA) / $(GITLAB_CI)
+           Bitbucket: $(BITBUCKET_COMMIT) / $(CI)                    -->
+    <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
+    <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration>
+
+    <!-- Optional: your app's public-facing version string.
+         Replace MY_PUBLIC_VERSION_VAR with your CI environment variable name,
+         e.g. $(MY_APP_VERSION) or $(RELEASE_TAG).                   -->
+    <PublicVersion Condition="'$(PublicVersion)' == ''">$(MY_PUBLIC_VERSION_VAR)</PublicVersion>
+  </PropertyGroup>
+</Project>
