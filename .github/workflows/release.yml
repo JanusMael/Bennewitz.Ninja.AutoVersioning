@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'NuGet version (e.g. 2026.2.429)'
+        required: true
 
 jobs:
   publish:
@@ -14,9 +19,17 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        # Strips the leading 'v' — e.g. v2026.2.429 → 2026.2.429
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+      - name: Resolve version and tag
+        # Tag push: strip leading 'v' from the tag (e.g. v2026.2.429 → 2026.2.429)
+        # Manual run: use the version input; derive tag by prepending 'v'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+            echo "TAG=v${{ inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+            echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          fi
 
       - name: Build
         run: dotnet build -c Release --nologo /p:Version=${{ env.VERSION }}
@@ -27,3 +40,12 @@ jobs:
       - name: Push to NuGet.org
         # Requires NUGET_API_KEY in GitHub repo settings: Settings → Secrets and variables → Actions
         run: dotnet nuget push ./packages/Release/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ env.TAG }}" \
+            --title "${{ env.TAG }}" \
+            --generate-notes \
+            ./packages/Release/*.nupkg
