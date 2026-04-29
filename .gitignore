@@ -1,0 +1,16 @@
+packages/
+obj/
+bin/
+
+# IDE
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.DotSettings
+
+# OS
+.DS_Store
+
+# Test results
+TestResults/

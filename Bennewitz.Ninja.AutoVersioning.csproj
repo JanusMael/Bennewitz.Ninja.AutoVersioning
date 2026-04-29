@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Source Generators compatibility requires targeting .NET Standard 2.0 -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <AssemblyName>Bennewitz.Ninja.AutoVersioning.SourceGenerators</AssemblyName>
+    <RootNamespace>Bennewitz.Ninja.AutoVersioning</RootNamespace>
+
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <!-- RS1032: diagnostic messageFormat intentionally uses \n for readable multi-line build output -->
+    <NoWarn>RS1032</NoWarn>
+
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>AnyCPU</Platforms>
+    <SonarQubeExclude>true</SonarQubeExclude>
+
+    <!-- Packaging — update Version before running dotnet pack -->
+    <Version>1.0.0</Version>
+    <Authors>Brian Bennewitz</Authors>
+    <Description>Assembly info incremental source generator.</Description>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Keep the generator DLL out of lib/; the nuspec places it in analyzers/dotnet/cs/ only -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Strip all transitive package dependencies from the .nupkg -->
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NuspecFile>Package.nuspec</NuspecFile>
+    <NuspecProperties>configuration=$(Configuration);version=$(Version);assemblyName=$(AssemblyName)</NuspecProperties>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="4.14.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- required for incremental generators -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" Version="4.14.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" Version="4.14.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.1" />
+  </ItemGroup>
+</Project>
