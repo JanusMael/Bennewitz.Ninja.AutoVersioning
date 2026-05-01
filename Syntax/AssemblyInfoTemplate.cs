@@ -16,7 +16,8 @@ public static class AssemblyInfoTemplate
         string company,
         string product,
         string? commitHash,
-        string? publicVersion
+        string? publicVersion,
+        string? copyrightHolder = null
     ) =>
         SyntaxFactory.CompilationUnit()
             .WithUsings(
@@ -34,7 +35,8 @@ public static class AssemblyInfoTemplate
                     company,
                     product,
                     commitHash,
-                    publicVersion
+                    publicVersion,
+                    copyrightHolder
                 )
             );
 
@@ -44,7 +46,8 @@ public static class AssemblyInfoTemplate
         string company,
         string product,
         string? commitHash,
-        string? publicVersion)
+        string? publicVersion,
+        string? copyrightHolder = null)
     {
         var list = new List<AttributeListSyntax>(
             new[]
@@ -58,7 +61,7 @@ public static class AssemblyInfoTemplate
                 AssemblyInfoSyntaxFactory.Informational
                     .Product($"{product} v{buildVersion.Version}"),
                 AssemblyInfoSyntaxFactory.Informational
-                    .Copyright($"Copyright {buildVersion.BuildDateTime.Year} [{buildConfiguration}]"),
+                    .Copyright($"Copyright {buildVersion.BuildDateTime.Year}{(string.IsNullOrWhiteSpace(copyrightHolder) ? "" : $" {copyrightHolder}")} [{buildConfiguration}]"),
                 AssemblyInfoSyntaxFactory.Identity
                     .Version(buildVersion.Version),
                 AssemblyInfoSyntaxFactory.Informational

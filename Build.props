@@ -25,6 +25,7 @@
     <CompilerVisibleProperty Include="GenerateAutoVersionedAssemblyInfo" />
     <CompilerVisibleProperty Include="AssemblyCompany" />
     <CompilerVisibleProperty Include="AssemblyProduct" />
+    <CompilerVisibleProperty Include="CopyrightHolder" />
     <CompilerVisibleProperty Include="CommitSha" />
     <CompilerVisibleProperty Include="IsContinuousIntegration" />
     <CompilerVisibleProperty Include="PublicVersion" />
@@ -39,6 +40,6 @@
           AfterTargets="Build"
           Condition="'$(GenerateAutoVersionedAssemblyInfo)' != 'true'">
     <Message Importance="High"
-             Text="[Bennewitz.Ninja.AutoVersioning] Assembly info generator is installed but not enabled. Add the following to your .csproj, Directory.Build.props, or any .props file imported by your build:%0A  &lt;PropertyGroup&gt;%0A    &lt;GenerateAutoVersionedAssemblyInfo&gt;true&lt;/GenerateAutoVersionedAssemblyInfo&gt;%0A    &lt;GenerateAssemblyInfo&gt;false&lt;/GenerateAssemblyInfo&gt;%0A    &lt;AssemblyCompany&gt;YourCompany&lt;/AssemblyCompany&gt;%0A    &lt;AssemblyProduct&gt;YourProduct&lt;/AssemblyProduct&gt;%0A    &lt;PublicVersion Condition=&quot;'$$(PublicVersion)' == ''&quot;&gt;$$(YOUR_CI_VERSION_VAR)&lt;/PublicVersion&gt; &lt;!-- optional --&gt;%0A    &lt;CommitSha Condition=&quot;'$$(CommitSha)' == ''&quot;&gt;$$(GITHUB_SHA)&lt;/CommitSha&gt; &lt;!-- optional --&gt;%0A    &lt;IsContinuousIntegration&gt;$$(GITHUB_ACTIONS)&lt;/IsContinuousIntegration&gt; &lt;!-- optional --&gt;%0A  &lt;/PropertyGroup&gt;" />
+             Text="[Bennewitz.Ninja.AutoVersioning] Assembly info generator is installed but not enabled. Add the following to your .csproj, Directory.Build.props, or any .props file imported by your build:%0A  &lt;PropertyGroup&gt;%0A    &lt;GenerateAutoVersionedAssemblyInfo&gt;true&lt;/GenerateAutoVersionedAssemblyInfo&gt;%0A    &lt;GenerateAssemblyInfo&gt;false&lt;/GenerateAssemblyInfo&gt;%0A    &lt;AssemblyCompany&gt;YourCompany&lt;/AssemblyCompany&gt;%0A    &lt;AssemblyProduct&gt;YourProduct&lt;/AssemblyProduct&gt;%0A    &lt;CopyrightHolder&gt;YourName&lt;/CopyrightHolder&gt; &lt;!-- optional --&gt;%0A    &lt;PublicVersion Condition=&quot;'$$(PublicVersion)' == ''&quot;&gt;$$(YOUR_CI_VERSION_VAR)&lt;/PublicVersion&gt; &lt;!-- optional --&gt;%0A    &lt;CommitSha Condition=&quot;'$$(CommitSha)' == ''&quot;&gt;$$(GITHUB_SHA)&lt;/CommitSha&gt; &lt;!-- optional --&gt;%0A    &lt;IsContinuousIntegration&gt;$$(GITHUB_ACTIONS)&lt;/IsContinuousIntegration&gt; &lt;!-- optional --&gt;%0A  &lt;/PropertyGroup&gt;" />
   </Target>
 </Project>

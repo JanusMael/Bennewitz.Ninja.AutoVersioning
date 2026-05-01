@@ -66,7 +66,8 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
                 PublicVersion = provider.GlobalOptions.TryGetValue("build_property.PublicVersion", out var publicVersion) ? publicVersion : null,
                 Configuration = provider.GlobalOptions.TryGetValue("build_property.Configuration", out var config) ? config : "Release",
                 AssemblyCompany = provider.GlobalOptions.TryGetValue("build_property.AssemblyCompany", out var assemblyCompany) ? assemblyCompany : null,
-                AssemblyProduct = provider.GlobalOptions.TryGetValue("build_property.AssemblyProduct", out var assemblyProduct) ? assemblyProduct : null
+                AssemblyProduct = provider.GlobalOptions.TryGetValue("build_property.AssemblyProduct", out var assemblyProduct) ? assemblyProduct : null,
+                CopyrightHolder = provider.GlobalOptions.TryGetValue("build_property.CopyrightHolder", out var copyrightHolder) ? copyrightHolder : null
             });
 
         // 2. Register the source output
@@ -98,7 +99,8 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
                     options.AssemblyCompany ?? string.Empty,
                     options.AssemblyProduct ?? string.Empty,
                     options.CommitSha,
-                    options.PublicVersion
+                    options.PublicVersion,
+                    options.CopyrightHolder ?? options.AssemblyCompany
                 ).NormalizeWhitespace();
 
                 spc.AddSource("AutoVersionedAssemblyInfo.g.cs", SourceText.From(sourceTree.ToFullString(), Encoding.UTF8));

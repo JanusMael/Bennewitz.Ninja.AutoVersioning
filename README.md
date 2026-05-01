@@ -91,6 +91,7 @@ Use `DirectoryBuildInfo.BuildRelease` wherever you need the build version at run
 | `GenerateAutoVersionedAssemblyInfo` | Set to `true` to enable the generator | **Yes** |
 | `AssemblyCompany` | Value for `[assembly: AssemblyCompany(...)]` | **Yes** |
 | `AssemblyProduct` | Value for `[assembly: AssemblyProduct(...)]` | **Yes** |
+| `CopyrightHolder` | Name shown in the copyright attribute — defaults to `AssemblyCompany` if omitted | No |
 | `CommitSha` | Git commit SHA | No |
 | `IsContinuousIntegration` | `true` on CI runs | No |
 | `PublicVersion` | Your app's public-facing version string | No |

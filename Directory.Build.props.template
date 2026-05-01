@@ -17,6 +17,9 @@
     <AssemblyCompany>YourCompany</AssemblyCompany>
     <AssemblyProduct>YourProduct</AssemblyProduct>
 
+    <!-- Optional: name shown in the copyright attribute — defaults to AssemblyCompany if omitted -->
+    <CopyrightHolder>Your Name or Company</CopyrightHolder>
+
     <!-- Optional: map CI environment variables to MSBuild properties.
          These evaluate to empty strings when building locally (no CI env vars present).
          Replace the $(GITHUB_*) references with your CI provider's equivalents:
