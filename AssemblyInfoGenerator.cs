@@ -117,6 +117,7 @@ namespace Bennewitz.Ninja.AutoVersioning
    /// </summary>
    public static class DirectoryBuildInfo
    {{
+       /// <summary>The build version string calculated at compile time.</summary>
        public const string BuildRelease = ""{buildVersion}"";
    }}
 }}";
