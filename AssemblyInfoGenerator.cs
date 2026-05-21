@@ -11,13 +11,20 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor GeneratorNotEnabledDescriptor = new(
         id: "BAUTOVERSIONING00",
         title: "Assembly Info Generator not enabled",
-        messageFormat: "Assembly info generator installed but not enabled.\n"
-                     + "Add the following to your .csproj, Directory.Build.props, or any .props file imported by your build:\n"
+        messageFormat: "Assembly info generator is installed but not enabled — see BAUTOVERSIONING04 for setup instructions.",
+        category: "Configuration",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor GeneratorSetupInstructionsDescriptor = new(
+        id: "BAUTOVERSIONING04",
+        title: "Assembly Info Generator setup instructions",
+        messageFormat: "To enable the assembly info generator, add the following to your .csproj, Directory.Build.props, or any .props file imported by your build:\n"
                      + "  <PropertyGroup>\n"
                      + "    <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>\n"
-                     + "    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>\n"
                      + "    <AssemblyCompany>YourCompany</AssemblyCompany>\n"
                      + "    <AssemblyProduct>YourProduct</AssemblyProduct>\n"
+                     + "    <CopyrightHolder>YourName</CopyrightHolder> <!-- optional -->\n"
                      + "    <PublicVersion Condition=\"'$(PublicVersion)' == ''\">$(YOUR_CI_VERSION_VAR)</PublicVersion> <!-- optional -->\n"
                      + "    <CommitSha Condition=\"'$(CommitSha)' == ''\">$(GITHUB_SHA)</CommitSha> <!-- optional -->\n"
                      + "    <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration> <!-- optional -->\n"
@@ -76,6 +83,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
             if (!options.GenerateAutoVersionedAssemblyInfo)
             {
                 spc.ReportDiagnostic(Diagnostic.Create(GeneratorNotEnabledDescriptor, Location.None));
+                spc.ReportDiagnostic(Diagnostic.Create(GeneratorSetupInstructionsDescriptor, Location.None));
                 return;
             }
 

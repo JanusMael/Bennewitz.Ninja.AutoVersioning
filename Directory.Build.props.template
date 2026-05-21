@@ -9,9 +9,21 @@
   <PropertyGroup>
     <!-- Enable the generator -->
     <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>
-    <!-- Required: prevents CS0579 duplicate attribute errors. The SDK emits AssemblyVersion,
-         AssemblyCompany, etc. by default; this generator emits them too, so one must be disabled. -->
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- Prevents CS0579 duplicate attribute errors by suppressing only the 8 SDK-generated
+         attributes that this generator also emits. Using granular suppressions (rather than
+         GenerateAssemblyInfo=false) preserves other SDK-generated attributes such as
+         InternalsVisibleTo from MSBuild item groups.
+         NOTE: The NuGet package's auto-imported Build.props sets these automatically when
+         GenerateAutoVersionedAssemblyInfo=true. You only need these here if your build does
+         not pick up the auto-imported Build.props for some reason. -->
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
 
     <!-- Required: your company and product names -->
     <AssemblyCompany>YourCompany</AssemblyCompany>

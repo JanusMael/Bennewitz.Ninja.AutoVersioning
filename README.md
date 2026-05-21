@@ -22,9 +22,6 @@ A [Roslyn incremental source generator](https://learn.microsoft.com/en-us/dotnet
 ```xml
 <PropertyGroup>
   <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>
-  <!-- Required: prevents CS0579 duplicate attribute errors. The SDK emits AssemblyVersion,
-       AssemblyCompany, etc. by default; this generator emits them too, so one must be disabled. -->
-  <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   <AssemblyCompany>YourCompany</AssemblyCompany>
   <AssemblyProduct>YourProduct</AssemblyProduct>
 
@@ -34,6 +31,8 @@ A [Roslyn incremental source generator](https://learn.microsoft.com/en-us/dotnet
   <PublicVersion Condition="'$(PublicVersion)' == ''">$(MY_VERSION_VAR)</PublicVersion>
 </PropertyGroup>
 ```
+
+> **Note:** The package's auto-imported `Build.props` automatically suppresses the 8 SDK-generated attributes that conflict with this generator (e.g. `AssemblyVersion`, `AssemblyCopyright`). It uses granular per-attribute suppressions rather than `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>`, which means `InternalsVisibleTo` and all other SDK-generated attributes continue to work normally. Do **not** add `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>` yourself — it will break `InternalsVisibleTo`.
 
 A ready-to-use template is available at [`Directory.Build.props.template`](Directory.Build.props.template).
 
@@ -132,10 +131,11 @@ The package auto-imports `Build.props` via NuGet, which declares `CompilerVisibl
 
 | ID | Severity | Description |
 |---|---|---|
-| `BAUTOVERSIONING00` | Warning | Generator is installed but `GenerateAutoVersionedAssemblyInfo` is not set to `true` |
+| `BAUTOVERSIONING00` | Warning | Generator is installed but `GenerateAutoVersionedAssemblyInfo` is not set to `true` (single-line signal) |
 | `BAUTOVERSIONING01` | Warning | Generator threw an unexpected exception |
 | `BAUTOVERSIONING02` | Error | `AssemblyCompany` is not configured |
 | `BAUTOVERSIONING03` | Error | `AssemblyProduct` is not configured |
+| `BAUTOVERSIONING04` | Warning | Multi-line setup snippet emitted alongside BAUTOVERSIONING00 — shows the required `Directory.Build.props` configuration |
 
 ---
 
