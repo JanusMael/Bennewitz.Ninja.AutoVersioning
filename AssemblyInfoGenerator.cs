@@ -19,7 +19,11 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor GeneratorSetupInstructionsDescriptor = new(
         id: "BAUTOVERSIONING04",
         title: "Assembly Info Generator setup instructions",
-        messageFormat: "To enable the assembly info generator, add the following to your .csproj, Directory.Build.props, or any .props file imported by your build:\n"
+        // First line is self-contained — build output panels only show line 1 of a multi-line message.
+        // The full <PropertyGroup> snippet that follows is visible in IDE detail/hover panes.
+        messageFormat: "Add to Directory.Build.props: <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>"
+                     + ", <AssemblyCompany>YourCompany</AssemblyCompany>"
+                     + ", <AssemblyProduct>YourProduct</AssemblyProduct>\n"
                      + "  <PropertyGroup>\n"
                      + "    <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>\n"
                      + "    <AssemblyCompany>YourCompany</AssemblyCompany>\n"
@@ -44,8 +48,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor AssemblyCompanyNotSetDescriptor = new(
         id: "BAUTOVERSIONING02",
         title: "AssemblyCompany not configured",
-        messageFormat: "AssemblyCompany is not set — [assembly: AssemblyCompany] will be empty.\n"
-                     + "Add to Directory.Build.props: <AssemblyCompany>YourCompany</AssemblyCompany>",
+        messageFormat: "AssemblyCompany is not set — add <AssemblyCompany>YourCompany</AssemblyCompany> to Directory.Build.props ([assembly: AssemblyCompany] will be empty without it)",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -53,8 +56,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor AssemblyProductNotSetDescriptor = new(
         id: "BAUTOVERSIONING03",
         title: "AssemblyProduct not configured",
-        messageFormat: "AssemblyProduct is not set — [assembly: AssemblyProduct] will be empty.\n"
-                     + "Add to Directory.Build.props: <AssemblyProduct>YourProduct</AssemblyProduct>",
+        messageFormat: "AssemblyProduct is not set — add <AssemblyProduct>YourProduct</AssemblyProduct> to Directory.Build.props ([assembly: AssemblyProduct] will be empty without it)",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
