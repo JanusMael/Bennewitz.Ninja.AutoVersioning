@@ -33,6 +33,15 @@ public sealed record BuildVersion
     }
 
     /// <summary>
+    /// Calculates a version from a pre-captured timestamp (e.g. from the BuildTimestamp MSBuild property)
+    /// </summary>
+    private BuildVersion(DateTimeOffset timestamp)
+    {
+        Version = CalculateAbsoluteVersion(out var buildDateTimeOffset, timestamp);
+        BuildDateTime = buildDateTimeOffset;
+    }
+
+    /// <summary>
     /// Calculates a version based on the specified `major version` with the remaining version parts relative to
     /// the specified `year of the first version` and the current build date and time
     /// </summary>
@@ -109,6 +118,9 @@ public sealed record BuildVersion
     /// <inheritdoc cref="BuildVersion()" />
     public static BuildVersion Generate() => new();
 
+    /// <inheritdoc cref="BuildVersion(DateTimeOffset)" />
+    public static BuildVersion Generate(DateTimeOffset timestamp) => new(timestamp);
+
     /// <inheritdoc cref="BuildVersion(UInt16,UInt16)" />
     public static BuildVersion Generate(UInt16 majorVersion, UInt16 yearOfFirstVersion) => new(majorVersion, yearOfFirstVersion);
 
@@ -143,15 +155,10 @@ public sealed record BuildVersion
         return $"{shortDate} {longTime} ({shortTimeZone})";
     }
 
-    /// <summary>
-    /// Calculates a version based on the current build year, quarter, date, and time
-    /// </summary>
-    /// <param name="buildTime"></param>
-    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Version CalculateAbsoluteVersion(out DateTimeOffset buildTime)
+    private static Version CalculateAbsoluteVersion(out DateTimeOffset buildTime, DateTimeOffset? timestamp = null)
     {
-        buildTime = DateTimeOffset.Now;
+        buildTime = timestamp ?? DateTimeOffset.Now;
 
         //even though Version ctor accepts Int32 parameters,
         //each part must actually be 0-65535 (aka UInt16 or ushort)

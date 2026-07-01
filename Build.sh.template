@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+#
+# Optional local-build wrapper for CONSUMERS of this package (bash/Linux/macOS equivalent of
+# Build.ps1.template — not to be confused with this repo's own Pack.ps1, which builds/packs
+# the generator itself). Use this one if you don't have PowerShell 7+ installed; use
+# Build.ps1.template if you do.
+#
+# Computes build metadata once, in this outer process, and passes it to `dotnet build` as
+# global properties (-p:) — the same override mechanism CI is expected to use (see the
+# Configuration Reference table in README.md). This gives an EXACT guarantee across every
+# project in the build, rather than relying on MSBuild property-evaluation timing.
+#
+# What this solves, for local terminal-driven builds only:
+#   - BuildTimestamp: fixed once, instead of captured independently per project at evaluation
+#                     time (see docs/MultiProjectBuildTimestamps.md for why that distinction
+#                     matters on deep dependency chains).
+#   - CommitSha:      populated from git, mirroring what CI providers already supply via
+#                     GITHUB_SHA / CI_COMMIT_SHA / BITBUCKET_COMMIT.
+#   - PublicVersion:  populated from the nearest git tag, mirroring what a tag-triggered
+#                     release pipeline would supply.
+#
+# What this does NOT solve:
+#   - IDE-triggered builds (Rider "Build Solution", Visual Studio Build) bypass this script
+#     entirely — they never invoke it, so those builds still fall back to evaluation-time
+#     BuildTimestamp capture with no CommitSha/PublicVersion. See
+#     docs/MultiProjectBuildTimestamps.md for the full list of alternatives considered and
+#     why none of them close that gap without added complexity.
+#
+# To use: copy this file to your solution root (alongside Directory.Build.props), drop the
+# .template extension (e.g. `build.sh`), and `chmod +x build.sh`. Requires git on PATH.
+
+set -euo pipefail
+
+# Captured once, before any project evaluates — every project in the build uses this same
+# value for its version's HHmm revision, regardless of how long compilation itself takes.
+# Local time on this machine, matching how the generator parses it (DateTimeStyles.AssumeLocal).
+build_timestamp=$(date +%Y%m%d%H%M%S)
+
+# Full SHA, matching the format CI providers supply (e.g. $(GITHUB_SHA)). Empty if this isn't
+# a git repo — the generator already tolerates a missing CommitSha.
+commit_sha=$(git rev-parse HEAD 2>/dev/null || true)
+
+# Nearest tag, matching what a tag-triggered release pipeline would supply. Empty if no tags
+# exist yet. Adjust the `git describe` flags if you want the commit-distance suffix instead
+# of just the tag name (drop --abbrev=0).
+public_version=$(git describe --tags --abbrev=0 2>/dev/null || true)
+
+# -p: values become global MSBuild properties, which a project's own Condition-guarded
+# fallback (e.g. Directory.Build.props.template's CommitSha mapping) can never override —
+# a global property can't be reassigned by a plain property element regardless of any
+# Condition. So CommitSha/PublicVersion are only passed when git actually produced a value;
+# otherwise they're left unset so the project's own fallback logic still runs normally.
+msbuild_properties=("-p:BuildTimestamp=$build_timestamp")
+[ -n "$commit_sha" ] && msbuild_properties+=("-p:CommitSha=$commit_sha")
+[ -n "$public_version" ] && msbuild_properties+=("-p:PublicVersion=$public_version")
+
+dotnet build "${msbuild_properties[@]}" "$@"

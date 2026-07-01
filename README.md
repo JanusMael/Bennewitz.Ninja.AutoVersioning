@@ -95,6 +95,7 @@ Use `DirectoryBuildInfo.BuildRelease` wherever you need the build version at run
 | `IsContinuousIntegration` | `true` on CI runs | No |
 | `PublicVersion` | Your app's public-facing version string | No |
 | `Configuration` | `Debug` / `Release` — set automatically by MSBuild | Auto |
+| `BuildTimestamp` | Build start time in `yyyyMMddHHmmss` format — captured automatically at MSBuild evaluation time (before any project compiles), ensuring a consistent version across all projects in a multi-project solution build. Override on CI for an exact guarantee: `dotnet build -p:BuildTimestamp=$(date +%Y%m%d%H%M%S)` | Auto |
 
 ### CI Provider Mappings
 
@@ -126,6 +127,12 @@ This is a modern C# `IIncrementalGenerator`. Compared to legacy `ISourceGenerato
 - Reads MSBuild properties **via `AnalyzerConfigOptionsProvider`** — safe, no direct environment variable reads
 
 The package auto-imports `Build.props` via NuGet, which declares `CompilerVisibleProperty` items and suppresses the SDK's default `AssemblyInfo` generation (preventing CS0579 duplicate attribute errors when the generator is enabled).
+
+### Timestamp Consistency in Multi-Project Builds
+
+`BuildTimestamp` keeps the version consistent across every project in a solution build. See [`docs/MultiProjectBuildTimestamps.md`](docs/MultiProjectBuildTimestamps.md) for how it works and what alternative approaches were considered.
+
+> **TL;DR:** For CI, or any local build where an exact guarantee matters more than convenience, use `-p:BuildTimestamp=...` to fix the value explicitly instead of relying on evaluation-time capture. Ready-to-use wrappers are available at [`Build.ps1.template`](Build.ps1.template) (Windows/PowerShell 7+) and [`Build.sh.template`](Build.sh.template) (Linux/macOS/bash).
 
 ### Diagnostics
 

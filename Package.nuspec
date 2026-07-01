@@ -36,5 +36,17 @@
     <!-- Displayed on NuGet.org and in the Visual Studio package manager -->
     <file src="README.md"
           target="" />
+    <!--
+      Included so the README's relative links resolve to real content when NuGet.org renders
+      the packaged readme against the package's own file structure, instead of 404ing.
+    -->
+    <file src="Directory.Build.props.template"
+          target="" />
+    <file src="Build.ps1.template"
+          target="" />
+    <file src="Build.sh.template"
+          target="" />
+    <file src="docs\MultiProjectBuildTimestamps.md"
+          target="docs" />
   </files>
 </package>

@@ -14,6 +14,28 @@
       <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration>
   -->
   <!--
+    Capture the build timestamp once during MSBuild property evaluation — before any
+    compilation target runs. Because all projects in a solution evaluate properties at
+    roughly the same time, this ensures a consistent version number across every project
+    in a multi-project build, whether driven by the IDE or the CLI.
+
+    For an exact guarantee on CI, override this via the command line:
+      dotnet build -p:BuildTimestamp=$(date +%Y%m%d%H%M%S)   # bash / GitHub Actions
+      dotnet build /p:BuildTimestamp=yyyyMMddHHmmss           # cmd (format manually)
+    Use LOCAL time on the machine that runs the build, as shown above — the generator parses
+    this with DateTimeStyles.AssumeLocal, so a UTC timestamp (e.g. `date -u`) would be
+    misinterpreted unless that machine's local zone is already UTC.
+
+    The Condition below protects a value already set earlier in evaluation (e.g. in the
+    consumer's own Directory.Build.props) from being clobbered by this default. A command-line
+    override is separately protected by MSBuild's own global-property semantics — a global
+    property can't be reassigned by a plain property element regardless of any Condition.
+  -->
+  <PropertyGroup Condition="'$(GenerateAutoVersionedAssemblyInfo)' == 'true'">
+    <BuildTimestamp Condition="'$(BuildTimestamp)' == ''">$([System.DateTime]::Now.ToString('yyyyMMddHHmmss'))</BuildTimestamp>
+  </PropertyGroup>
+
+  <!--
     Suppress only the specific SDK-generated attributes that this generator also emits.
     Using granular suppressions (rather than GenerateAssemblyInfo=false) so that other
     SDK-generated attributes — such as InternalsVisibleTo from MSBuild item groups —
@@ -39,6 +61,7 @@
     <CompilerVisibleProperty Include="IsContinuousIntegration" />
     <CompilerVisibleProperty Include="PublicVersion" />
     <CompilerVisibleProperty Include="Configuration" />
+    <CompilerVisibleProperty Include="BuildTimestamp" />
   </ItemGroup>
 
   <!--

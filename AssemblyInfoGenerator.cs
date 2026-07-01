@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -61,6 +62,10 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    private static bool ParseBuildTimestamp(string? value, out DateTimeOffset result) =>
+        !string.IsNullOrEmpty(value) &&
+        DateTimeOffset.TryParseExact(value, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out result);
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // 1. Read MSBuild properties safely (replaces reading Environment variables and .env files)
@@ -76,7 +81,8 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
                 Configuration = provider.GlobalOptions.TryGetValue("build_property.Configuration", out var config) ? config : "Release",
                 AssemblyCompany = provider.GlobalOptions.TryGetValue("build_property.AssemblyCompany", out var assemblyCompany) ? assemblyCompany : null,
                 AssemblyProduct = provider.GlobalOptions.TryGetValue("build_property.AssemblyProduct", out var assemblyProduct) ? assemblyProduct : null,
-                CopyrightHolder = provider.GlobalOptions.TryGetValue("build_property.CopyrightHolder", out var copyrightHolder) ? copyrightHolder : null
+                CopyrightHolder = provider.GlobalOptions.TryGetValue("build_property.CopyrightHolder", out var copyrightHolder) ? copyrightHolder : null,
+                BuildTimestamp = provider.GlobalOptions.TryGetValue("build_property.BuildTimestamp", out var buildTimestamp) ? buildTimestamp : null
             });
 
         // 2. Register the source output
@@ -97,10 +103,9 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
 
             try
             {
-                // Note: To optimize further in a real IDE, you might only regenerate the BuildVersion
-                // if it's an actual CI build, otherwise fallback to a static version to prevent
-                // continuous infinite background recompilation loops in Rider/VS.
-                var buildVersion = BuildVersion.Generate();
+                var buildVersion = ParseBuildTimestamp(options.BuildTimestamp, out var capturedTimestamp)
+                    ? BuildVersion.Generate(capturedTimestamp)
+                    : BuildVersion.Generate();
 
                 // Pass the safely extracted MSBuild properties to the template
                 var sourceTree = AssemblyInfoTemplate.Generate(
