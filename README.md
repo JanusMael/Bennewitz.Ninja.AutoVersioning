@@ -96,6 +96,35 @@ Use `DirectoryBuildInfo.BuildRelease` wherever you need the build version at run
 | `PublicVersion` | Your app's public-facing version string | No |
 | `Configuration` | `Debug` / `Release` — set automatically by MSBuild | Auto |
 | `BuildTimestamp` | Build start time in `yyyyMMddHHmmss` format — captured automatically at MSBuild evaluation time (before any project compiles), ensuring a consistent version across all projects in a multi-project solution build. Override on CI for an exact guarantee: `dotnet build -p:BuildTimestamp=$(date +%Y%m%d%H%M%S)` | Auto |
+| `AutoVersion` | **Output.** The four-part version `YEAR.QUARTER.MMdd.HHmm` the generator stamps, derived from `BuildTimestamp` during property evaluation so MSBuild can read it too. Overridable | Auto |
+| `AutoPackageVersion` | **Output.** The same version without the time component: `YEAR.QUARTER.MMdd`. Overridable | Auto |
+
+### Using the version from MSBuild
+
+The generator calculates the version inside the Roslyn pipeline, which is too late for anything
+MSBuild decides. `PackageVersion` is the common casualty: it is evaluated long before compilation,
+so a library packs as NuGet's default `1.0.0` while the assembly inside that package is stamped
+`2026.3.913.1613`. The package and its own contents disagree, and nothing reports it.
+
+`AutoVersion` and `AutoPackageVersion` are derived during property evaluation from the same
+`BuildTimestamp` the generator is handed, so they are available early enough to assign:
+
+```xml
+<PropertyGroup>
+  <PackageVersion>$(AutoPackageVersion)</PackageVersion>
+</PropertyGroup>
+```
+
+Neither property is assigned to anything automatically — opting in is explicit, because this
+package should not quietly take over `PackageVersion` for every project that references it.
+
+> Three-part for packages on purpose: four-part versions are not SemVer, which matters for
+> anything published publicly, and `Pack.ps1` already defaults to that form.
+
+⚠ Like every other property here, these need `GenerateAutoVersionedAssemblyInfo` set to `true`
+**in `Directory.Build.props`**, not in the `.csproj`. NuGet imports this package's `.props` before
+the project body, so a value set in the `.csproj` arrives too late — and the symptom is a pile of
+`CS0579: Duplicate 'AssemblyVersion' attribute` errors rather than anything mentioning timing.
 
 ### CI Provider Mappings
 

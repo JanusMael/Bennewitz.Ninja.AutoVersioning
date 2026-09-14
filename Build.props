@@ -36,6 +36,67 @@
   </PropertyGroup>
 
   <!--
+    Expose the calculated version to MSBUILD, not only to the compilation.
+
+    WHY THIS EXISTS
+    ===============
+    The generator calculates the version inside the Roslyn pipeline, which is far too late for
+    anything MSBuild needs to decide. `PackageVersion` in particular is evaluated long before
+    compilation, so a consumer packing a library gets NuGet's default `1.0.0` while the assembly
+    inside that package is stamped `2026.3.913.1613`. The package and its own contents disagree,
+    and nothing reports it.
+
+    `PublicVersion` does not solve this: it is a CompilerVisibleProperty read by the generator,
+    so it likewise cannot be read back by MSBuild.
+
+    So the two CalVer parts are derived here, during property evaluation, from the same
+    `BuildTimestamp` the generator is handed. One captured instant, two consumers of it.
+
+      AutoVersion         YEAR.QUARTER.MMdd.HHmm   the four-part stamp the generator emits
+      AutoPackageVersion  YEAR.QUARTER.MMdd        three-part, which is what a NuGet package
+                                                   wants: four-part versions are not SemVer,
+                                                   and Pack.ps1 already defaults to this form
+
+    Neither is assigned to anything. A consumer opts in explicitly, which is the whole point —
+    this package should not silently take over `PackageVersion` for every project that
+    references it:
+
+      <PackageVersion>$(AutoPackageVersion)</PackageVersion>
+
+    Both are overridable, so a release can pin the version from a tag and everything downstream
+    follows.
+
+    ⚠ REFERENCE IMPLEMENTATION IS Versioning/BuildVersion.cs — this is a second expression of
+    the same algorithm, in a language that cannot share code with it, and the two must not
+    drift. Specifically: `CalculateAbsoluteVersion` (year, quarter), `GetQuarter` ((Month + 2) / 3,
+    integer division) and `GetBuildInfo` (`Convert.ToUInt16` over "MMdd"/"HHmm", which is what
+    drops the leading zero — 09/13 becomes 913, and 00:05 becomes 5). Verified against both a
+    built assembly's FileVersion (2026.3.913.1613) and this package's own published version
+    (2026.3.819), plus the quarter boundaries at Mar 31 / Apr 1 and Dec 31.
+
+    ⚠ The quarter is spelled out rather than calculated because MSBuild's Divide returns a
+    DOUBLE: $([MSBuild]::Divide(11, 3)) is 3.6666666666666665, not 3.
+  -->
+  <PropertyGroup Condition="'$(GenerateAutoVersionedAssemblyInfo)' == 'true' And '$(BuildTimestamp.Length)' == '14'">
+    <_AutoVersionYear>$(BuildTimestamp.Substring(0, 4))</_AutoVersionYear>
+    <_AutoVersionMonth>$([System.Int32]::Parse($(BuildTimestamp.Substring(4, 2))))</_AutoVersionMonth>
+    <_AutoVersionDay>$([System.Int32]::Parse($(BuildTimestamp.Substring(6, 2))))</_AutoVersionDay>
+    <_AutoVersionHour>$([System.Int32]::Parse($(BuildTimestamp.Substring(8, 2))))</_AutoVersionHour>
+    <_AutoVersionMinute>$([System.Int32]::Parse($(BuildTimestamp.Substring(10, 2))))</_AutoVersionMinute>
+
+    <_AutoVersionQuarter Condition="$(_AutoVersionMonth) &lt;= 3">1</_AutoVersionQuarter>
+    <_AutoVersionQuarter Condition="$(_AutoVersionMonth) &gt;= 4 And $(_AutoVersionMonth) &lt;= 6">2</_AutoVersionQuarter>
+    <_AutoVersionQuarter Condition="$(_AutoVersionMonth) &gt;= 7 And $(_AutoVersionMonth) &lt;= 9">3</_AutoVersionQuarter>
+    <_AutoVersionQuarter Condition="$(_AutoVersionMonth) &gt;= 10">4</_AutoVersionQuarter>
+
+    <_AutoVersionMMdd>$([MSBuild]::Add($([MSBuild]::Multiply($(_AutoVersionMonth), 100)), $(_AutoVersionDay)))</_AutoVersionMMdd>
+    <_AutoVersionHHmm>$([MSBuild]::Add($([MSBuild]::Multiply($(_AutoVersionHour), 100)), $(_AutoVersionMinute)))</_AutoVersionHHmm>
+
+    <AutoPackageVersion Condition="'$(AutoPackageVersion)' == ''">$(_AutoVersionYear).$(_AutoVersionQuarter).$(_AutoVersionMMdd)</AutoPackageVersion>
+    <AutoVersion Condition="'$(AutoVersion)' == ''">$(AutoPackageVersion).$(_AutoVersionHHmm)</AutoVersion>
+  </PropertyGroup>
+
+  <!--
     Suppress only the specific SDK-generated attributes that this generator also emits.
     Using granular suppressions (rather than GenerateAssemblyInfo=false) so that other
     SDK-generated attributes — such as InternalsVisibleTo from MSBuild item groups —
