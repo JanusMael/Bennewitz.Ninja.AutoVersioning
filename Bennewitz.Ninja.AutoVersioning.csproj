@@ -34,6 +34,9 @@
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    <!-- Activates Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030) against BannedSymbols.txt.
+         Without this entry the analyzer is referenced but inert. -->
+    <AdditionalFiles Include="BannedSymbols.txt" />
   </ItemGroup>
 
   <ItemGroup>

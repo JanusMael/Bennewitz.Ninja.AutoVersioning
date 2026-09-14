@@ -1,0 +1,8 @@
+M:Microsoft.CodeAnalysis.SyntaxNode.ToString~System.String;Use `GetText().ToString()` for properly rendered output
+M:Microsoft.CodeAnalysis.SyntaxList`1.ToString~System.String;Use `ToFullString()` for properly rendered output
+
+M:Microsoft.CodeAnalysis.CSharp.SyntaxFactory.SingletonList``1(``0)~Microsoft.CodeAnalysis.SyntaxList{``0};Use `SyntaxExtensions.ToSyntaxList()` instead
+M:Microsoft.CodeAnalysis.CSharp.SyntaxFactory.List``1(System.Collections.Generic.IEnumerable{``0})~Microsoft.CodeAnalysis.SyntaxList{``0};Use `SyntaxExtensions.ToSyntaxList()` instead
+
+M:Microsoft.CodeAnalysis.CSharp.SyntaxFactory.SingletonSeparatedList``1(``0)~Microsoft.CodeAnalysis.SeparatedSyntaxList{``0};Use `SyntaxExtensions.ToSeparatedSyntaxList()` instead
+M:Microsoft.CodeAnalysis.CSharp.SyntaxFactory.SeparatedList``1(System.Collections.Generic.IEnumerable{``0})~Microsoft.CodeAnalysis.SeparatedSyntaxList{``0};Use `SyntaxExtensions.ToSeparatedSyntaxList()` instead
