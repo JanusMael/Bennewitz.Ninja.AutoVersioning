@@ -32,7 +32,6 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
                      + "    <CopyrightHolder>YourName</CopyrightHolder> <!-- optional -->\n"
                      + "    <PublicVersion Condition=\"'$(PublicVersion)' == ''\">$(YOUR_CI_VERSION_VAR)</PublicVersion> <!-- optional -->\n"
                      + "    <CommitSha Condition=\"'$(CommitSha)' == ''\">$(GITHUB_SHA)</CommitSha> <!-- optional -->\n"
-                     + "    <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration> <!-- optional -->\n"
                      + "  </PropertyGroup>",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
@@ -75,7 +74,6 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
                 // Properties must be exposed in csproj via <CompilerVisibleProperty Include="PropertyName" />
                 // They are accessed via the "build_property." prefix
                 GenerateAutoVersionedAssemblyInfo = provider.GlobalOptions.TryGetValue("build_property.GenerateAutoVersionedAssemblyInfo", out var gen) && gen.Equals("true", StringComparison.OrdinalIgnoreCase),
-                IsContinuousIntegration = provider.GlobalOptions.TryGetValue("build_property.IsContinuousIntegration", out var isCI) && isCI.Equals("true", StringComparison.OrdinalIgnoreCase),
                 CommitSha = provider.GlobalOptions.TryGetValue("build_property.CommitSha", out var sha) ? sha : null,
                 PublicVersion = provider.GlobalOptions.TryGetValue("build_property.PublicVersion", out var publicVersion) ? publicVersion : null,
                 Configuration = provider.GlobalOptions.TryGetValue("build_property.Configuration", out var config) ? config : "Release",

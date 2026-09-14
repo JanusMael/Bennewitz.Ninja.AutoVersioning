@@ -27,7 +27,6 @@ A [Roslyn incremental source generator](https://learn.microsoft.com/en-us/dotnet
 
   <!-- Optional: map your CI provider's variables -->
   <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
-  <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration>
   <PublicVersion Condition="'$(PublicVersion)' == ''">$(MY_VERSION_VAR)</PublicVersion>
 </PropertyGroup>
 ```
@@ -92,7 +91,6 @@ Use `DirectoryBuildInfo.BuildRelease` wherever you need the build version at run
 | `AssemblyProduct` | Value for `[assembly: AssemblyProduct(...)]` | **Yes** |
 | `CopyrightHolder` | Name shown in the copyright attribute — defaults to `AssemblyCompany` if omitted | No |
 | `CommitSha` | Git commit SHA | No |
-| `IsContinuousIntegration` | `true` on CI runs | No |
 | `PublicVersion` | Your app's public-facing version string | No |
 | `Configuration` | `Debug` / `Release` — set automatically by MSBuild | Auto |
 | `BuildTimestamp` | Build start time in `yyyyMMddHHmmss` format — captured automatically at MSBuild evaluation time (before any project compiles), ensuring a consistent version across all projects in a multi-project solution build. Override on CI for an exact guarantee: `dotnet build -p:BuildTimestamp=$(date +%Y%m%d%H%M%S)` | Auto |
@@ -127,6 +125,10 @@ auto-imported `Build.targets`, which NuGet imports *after* the project body, so 
 regardless of where it is declared.
 
 ### CI Provider Mappings
+
+Map `CommitSha` from whichever variable your provider sets. The CI-flag column is listed for
+convenience only — this package does not read it; it is what you would condition your own MSBuild
+targets on (e.g. `Condition="'$(GITHUB_ACTIONS)' == 'true'"`).
 
 | Provider | Commit SHA | CI flag |
 |---|---|---|

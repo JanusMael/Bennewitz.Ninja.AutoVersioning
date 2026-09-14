@@ -34,11 +34,10 @@
 
     <!-- Optional: map CI environment variables to MSBuild properties.
          These evaluate to empty strings when building locally (no CI env vars present).
-         Replace the $(GITHUB_*) references with your CI provider's equivalents:
-           GitLab:    $(CI_COMMIT_SHA) / $(GITLAB_CI)
-           Bitbucket: $(BITBUCKET_COMMIT) / $(CI)                    -->
+         Replace the $(GITHUB_*) reference with your CI provider's equivalent:
+           GitLab:    $(CI_COMMIT_SHA)
+           Bitbucket: $(BITBUCKET_COMMIT)                            -->
     <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
-    <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration>
 
     <!-- Optional: your app's public-facing version string.
          Replace MY_PUBLIC_VERSION_VAR with your CI environment variable name,
