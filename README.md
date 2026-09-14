@@ -32,7 +32,7 @@ A [Roslyn incremental source generator](https://learn.microsoft.com/en-us/dotnet
 </PropertyGroup>
 ```
 
-> **Note:** The package's auto-imported `Build.props` automatically suppresses the 8 SDK-generated attributes that conflict with this generator (e.g. `AssemblyVersion`, `AssemblyCopyright`). It uses granular per-attribute suppressions rather than `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>`, which means `InternalsVisibleTo` and all other SDK-generated attributes continue to work normally. Do **not** add `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>` yourself — it will break `InternalsVisibleTo`.
+> **Note:** The package's auto-imported `Build.targets` automatically suppresses the 8 SDK-generated attributes that conflict with this generator (e.g. `AssemblyVersion`, `AssemblyCopyright`). It uses granular per-attribute suppressions rather than `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>`, which means `InternalsVisibleTo` and all other SDK-generated attributes continue to work normally. Do **not** add `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>` yourself — it will break `InternalsVisibleTo`.
 
 A ready-to-use template is available at [`Directory.Build.props.template`](Directory.Build.props.template).
 
@@ -121,10 +121,10 @@ package should not quietly take over `PackageVersion` for every project that ref
 > Three-part for packages on purpose: four-part versions are not SemVer, which matters for
 > anything published publicly, and `Pack.ps1` already defaults to that form.
 
-⚠ Like every other property here, these need `GenerateAutoVersionedAssemblyInfo` set to `true`
-**in `Directory.Build.props`**, not in the `.csproj`. NuGet imports this package's `.props` before
-the project body, so a value set in the `.csproj` arrives too late — and the symptom is a pile of
-`CS0579: Duplicate 'AssemblyVersion' attribute` errors rather than anything mentioning timing.
+`GenerateAutoVersionedAssemblyInfo` may be set anywhere the build sees it — `Directory.Build.props`,
+another `.props` file, or the `.csproj` itself. The SDK attribute suppressions live in the package's
+auto-imported `Build.targets`, which NuGet imports *after* the project body, so the flag is honoured
+regardless of where it is declared.
 
 ### CI Provider Mappings
 
@@ -155,7 +155,7 @@ This is a modern C# `IIncrementalGenerator`. Compared to legacy `ISourceGenerato
 - Uses the **Roslyn caching pipeline** — the IDE (Rider, Visual Studio) only re-runs the generator when its inputs change, eliminating background compilation loops
 - Reads MSBuild properties **via `AnalyzerConfigOptionsProvider`** — safe, no direct environment variable reads
 
-The package auto-imports `Build.props` via NuGet, which declares `CompilerVisibleProperty` items and suppresses the SDK's default `AssemblyInfo` generation (preventing CS0579 duplicate attribute errors when the generator is enabled).
+The package auto-imports two files via NuGet: `Build.props`, which declares the `CompilerVisibleProperty` items and derives `AutoVersion` / `AutoPackageVersion`, and `Build.targets`, which suppresses the SDK's conflicting `AssemblyInfo` attributes (preventing CS0579 duplicate attribute errors when the generator is enabled). The suppressions live in the `.targets` because NuGet imports it after the consuming project's body, so `GenerateAutoVersionedAssemblyInfo` is honoured wherever it is set.
 
 ### Timestamp Consistency in Multi-Project Builds
 

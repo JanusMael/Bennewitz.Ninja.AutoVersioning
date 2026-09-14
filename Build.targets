@@ -1,0 +1,31 @@
+<Project>
+  <!--
+    This file is auto-imported by NuGet when this package is referenced, and — unlike the
+    companion Build.props — it is imported AFTER the consuming project's own body.
+
+    WHY THAT MATTERS
+    ================
+    These suppressions are gated on GenerateAutoVersionedAssemblyInfo. A .props file is imported
+    before the project body, so a project that enables the generator in its own .csproj (which the
+    README and BAUTOVERSIONING04 both present as a supported location) would evaluate that
+    condition while the property was still empty: the suppressions would silently not apply and the
+    build would fail with CS0579 duplicate attribute errors.
+
+    Evaluating here instead means the flag is honoured wherever it is set — Directory.Build.props,
+    a .props file, or the project body.
+
+    Suppress only the specific SDK-generated attributes that this generator also emits. Granular
+    suppressions rather than GenerateAssemblyInfo=false, so other SDK-generated attributes — such
+    as InternalsVisibleTo from MSBuild item groups — keep working.
+  -->
+  <PropertyGroup Condition="'$(GenerateAutoVersionedAssemblyInfo)' == 'true'">
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+  </PropertyGroup>
+</Project>

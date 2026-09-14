@@ -30,8 +30,15 @@
     consumer's own Directory.Build.props) from being clobbered by this default. A command-line
     override is separately protected by MSBuild's own global-property semantics — a global
     property can't be reassigned by a plain property element regardless of any Condition.
+
+    Deliberately NOT gated on GenerateAutoVersionedAssemblyInfo. This file is imported before the
+    consuming project's body, so a project that enables the generator in its own .csproj would see
+    such a gate evaluate while the flag was still empty, leaving BuildTimestamp unset and silently
+    reintroducing the per-project version drift this exists to prevent. Computing it unconditionally
+    costs one DateTime read for a project that never opts in, and keeps AutoPackageVersion below
+    usable from the project body.
   -->
-  <PropertyGroup Condition="'$(GenerateAutoVersionedAssemblyInfo)' == 'true'">
+  <PropertyGroup>
     <BuildTimestamp Condition="'$(BuildTimestamp)' == ''">$([System.DateTime]::Now.ToString('yyyyMMddHHmmss'))</BuildTimestamp>
   </PropertyGroup>
 
@@ -77,7 +84,7 @@
     ⚠ The quarter is spelled out rather than calculated because MSBuild's Divide returns a
     DOUBLE: $([MSBuild]::Divide(11, 3)) is 3.6666666666666665, not 3.
   -->
-  <PropertyGroup Condition="'$(GenerateAutoVersionedAssemblyInfo)' == 'true' And '$(BuildTimestamp.Length)' == '14'">
+  <PropertyGroup Condition="'$(BuildTimestamp.Length)' == '14'">
     <_AutoVersionYear>$(BuildTimestamp.Substring(0, 4))</_AutoVersionYear>
     <_AutoVersionMonth>$([System.Int32]::Parse($(BuildTimestamp.Substring(4, 2))))</_AutoVersionMonth>
     <_AutoVersionDay>$([System.Int32]::Parse($(BuildTimestamp.Substring(6, 2))))</_AutoVersionDay>
@@ -97,21 +104,11 @@
   </PropertyGroup>
 
   <!--
-    Suppress only the specific SDK-generated attributes that this generator also emits.
-    Using granular suppressions (rather than GenerateAssemblyInfo=false) so that other
-    SDK-generated attributes — such as InternalsVisibleTo from MSBuild item groups —
-    are not affected.
+    The SDK attribute suppressions live in the companion Build.targets, not here: they are gated on
+    GenerateAutoVersionedAssemblyInfo, and this file is imported before the consuming project's body,
+    so a project enabling the generator in its own .csproj would evaluate that gate too early and
+    hit CS0579 duplicate attribute errors.
   -->
-  <PropertyGroup Condition="'$(GenerateAutoVersionedAssemblyInfo)' == 'true'">
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-  </PropertyGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GenerateAutoVersionedAssemblyInfo" />

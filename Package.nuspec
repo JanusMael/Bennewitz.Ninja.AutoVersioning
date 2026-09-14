@@ -33,6 +33,16 @@
           target="build\Bennewitz.Ninja.AutoVersioning.props" />
     <file src="Build.props"
           target="buildMultiTargeting\Bennewitz.Ninja.AutoVersioning.props" />
+    <!--
+      Build.targets is imported AFTER the consuming project's body, which is what lets the SDK
+      attribute suppressions honour GenerateAutoVersionedAssemblyInfo no matter where it is set
+      (Directory.Build.props, a .props file, or the .csproj itself). Same dual-path requirement
+      as the .props above. Must be named {PackageId}.targets.
+    -->
+    <file src="Build.targets"
+          target="build\Bennewitz.Ninja.AutoVersioning.targets" />
+    <file src="Build.targets"
+          target="buildMultiTargeting\Bennewitz.Ninja.AutoVersioning.targets" />
     <!-- Displayed on NuGet.org and in the Visual Studio package manager -->
     <file src="README.md"
           target="" />
