@@ -31,7 +31,7 @@ A [Roslyn incremental source generator](https://learn.microsoft.com/en-us/dotnet
 </PropertyGroup>
 ```
 
-> **Note:** The package's auto-imported `Build.targets` automatically suppresses the 8 SDK-generated attributes that conflict with this generator (e.g. `AssemblyVersion`, `AssemblyCopyright`). It uses granular per-attribute suppressions rather than `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>`, which means `InternalsVisibleTo` and all other SDK-generated attributes continue to work normally. Do **not** add `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>` yourself — it will break `InternalsVisibleTo`.
+> **Note:** The package's auto-imported `Build.targets` suppresses the 8 SDK-generated attributes that this generator also emits (e.g. `AssemblyVersion`, `AssemblyCopyright`), so you do not need to disable anything yourself. Do **not** add `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>`: it is redundant, and broader than intended — that switch disables *every* SDK-generated attribute, including `InternalsVisibleTo` declared via MSBuild `<InternalsVisibleTo>` items. (A hand-written `InternalsVisibleTo` in a compiled `.cs` file is unaffected either way.)
 
 A ready-to-use template is available at [`Directory.Build.props.template`](Directory.Build.props.template).
 

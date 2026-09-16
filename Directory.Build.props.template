@@ -5,25 +5,16 @@
 
     The `CompilerVisibleProperty` declarations are handled automatically by the NuGet package's
     auto-imported Build.props — you do not need to add them here.
+
+    Nor do you need to disable the SDK's own assembly-attribute generation. The package's
+    auto-imported Build.targets suppresses exactly the attributes this generator emits, leaving
+    every other SDK-generated attribute alone. Do not add <GenerateAssemblyInfo>false</GenerateAssemblyInfo>:
+    it is redundant, and it is broader than intended — that switch disables ALL SDK-generated
+    attributes, including InternalsVisibleTo declared via MSBuild <InternalsVisibleTo> items.
   -->
   <PropertyGroup>
     <!-- Enable the generator -->
     <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>
-    <!-- Prevents CS0579 duplicate attribute errors by suppressing only the 8 SDK-generated
-         attributes that this generator also emits. Using granular suppressions (rather than
-         GenerateAssemblyInfo=false) preserves other SDK-generated attributes such as
-         InternalsVisibleTo from MSBuild item groups.
-         NOTE: The NuGet package's auto-imported Build.props sets these automatically when
-         GenerateAutoVersionedAssemblyInfo=true. You only need these here if your build does
-         not pick up the auto-imported Build.props for some reason. -->
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
 
     <!-- Required: your company and product names -->
     <AssemblyCompany>YourCompany</AssemblyCompany>
