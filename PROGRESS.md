@@ -71,3 +71,32 @@ broke, which contradicts seeing diagnostics at all and would itself be informati
   malformed entry matches nothing and fails silently.
 - **`Versioning/BuildVersion.cs` and the MSBuild version derivation in `Build.props` are two
   expressions of the same CalVer algorithm** and must not drift.
+- **The generator emits printable ASCII (U+0020 to U+007E) plus exactly one deliberate exception,
+  U+2665.** The build name is `Built with ♥ {commitHash}`, or `Built with ♥` when no hash was
+  supplied; the heart is branding, not corruption. Measured on a real consumer build, it is stored
+  as UTF-16 in the Win32 `ProductVersion` resource and round-trips intact, with
+  `FileVersionInfo.GetVersionInfo(...).ProductVersion` comparing byte-identical to the runtime
+  `AssemblyInformationalVersion` attribute — so a consumer seeing those two disagree is looking at a
+  different cause. `AssemblyInfoTemplateTests` allowlists ASCII plus U+2665 and pins the exact text,
+  so any *other* character above U+007E fails the build. Two things that look like causes and are
+  not: the `AddSource` calls already pass `Encoding.UTF8`, and the source files are UTF-8 without a
+  BOM, which Roslyn reads correctly.
+- **`BuildVersion` must never consult the ambient culture.** `GetBuildInfo` derives the Build and
+  Revision version parts from `ToString("MMdd")`/`ToString("HHmm")`, which pick the *culture's
+  calendar*. Measured before the fix: a 29 April timestamp produced `2026.2.1112.845` under `ar-SA`
+  (Umm al-Qura) and `2026.2.209.845` under `fa-IR` (Solar Hijri) — a wrong `AssemblyVersion` and
+  `AssemblyFileVersion`, not merely a cosmetic string, and a locale with non-Latin digits would have
+  thrown in `Convert.ToUInt16`. The rendered build time is invariant for the same reason, since it is
+  interpolated raw into `DirectoryBuildInfo.BuildRelease`, where a locale-supplied quote would break
+  the generated source. `BuildVersionTests` runs every assertion under de-DE, th-TH, ar-SA, fa-IR and
+  ja-JP and asserts the invariant result, so it stays correct whatever a given ICU version decides
+  those cultures mean.
+- **The test project needs the `test.runner` opt-in in `global.json`, and `dotnet test` must not be
+  passed `--nologo`.** MSTest 4.x runs on Microsoft.Testing.Platform; the .NET 10 SDK refuses to
+  drive MTP through the legacy VSTest target, and `dotnet test` forwards unrecognised flags to the
+  test host, which rejects them and reports zero tests run with exit code 5 rather than failing
+  loudly. Removing `global.json` reinstates the VSTest error.
+- **The generator's `.csproj` sits at the repository root**, so its default `**/*.cs` glob would
+  compile `Tests/` into the netstandard2.0 analyzer assembly. `DefaultItemExcludes` holds it back.
+  Keeping the test project in a subdirectory also leaves `dotnet build` at the root unambiguous,
+  which is what both workflows invoke.

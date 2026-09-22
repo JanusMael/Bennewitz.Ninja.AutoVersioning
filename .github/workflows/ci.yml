@@ -17,3 +17,8 @@ jobs:
           dotnet-version: '10.x'
       - name: Build
         run: dotnet build -c Release --nologo
+      - name: Test
+        # No --nologo: the test project runs on Microsoft.Testing.Platform (opted in via
+        # global.json), and dotnet test forwards unrecognised flags to the test host, which
+        # rejects them and reports zero tests run.
+        run: dotnet test Tests/Bennewitz.Ninja.AutoVersioning.Tests/Bennewitz.Ninja.AutoVersioning.Tests.csproj -c Release
