@@ -79,3 +79,11 @@ broke, which contradicts seeing diagnostics at all and would itself be informati
   `AssemblyInformationalVersion` attribute — so a consumer seeing those two disagree is looking at a
   different cause. Two things that look like causes and are not: the `AddSource` calls already pass
   `Encoding.UTF8`, and the source files are UTF-8 without a BOM, which Roslyn reads correctly.
+- **`BuildVersion` must never consult the ambient culture.** `GetBuildInfo` derives the Build and
+  Revision version parts from `ToString("MMdd")`/`ToString("HHmm")`, which pick the *culture's
+  calendar*. Measured before the fix: a 29 April timestamp produced `2026.2.1112.845` under `ar-SA`
+  (Umm al-Qura) and `2026.2.209.845` under `fa-IR` (Solar Hijri) — a wrong `AssemblyVersion` and
+  `AssemblyFileVersion`, not merely a cosmetic string, and a locale with non-Latin digits would have
+  thrown in `Convert.ToUInt16`. The rendered build time is invariant for the same reason, since it is
+  interpolated raw into `DirectoryBuildInfo.BuildRelease`, where a locale-supplied quote would break
+  the generated source.

@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
 
@@ -146,13 +145,24 @@ public sealed record BuildVersion
         return true;
     }
 
+    /// <summary>
+    /// ISO-ordered date, 24-hour time, and a numeric UTC offset, all culture-invariant.
+    /// </summary>
+    /// <remarks>
+    /// This string is embedded in the generated DirectoryBuildInfo.BuildRelease constant, which the
+    /// README points consumers at for health and diagnostic endpoints. The previous
+    /// ToShortDateString/ToLongTimeString pair and TimeZoneInfo.Local.StandardName were all
+    /// locale-dependent, so the same commit produced a different string per build machine, that
+    /// string could be non-ASCII on a non-English system, and a quote character from some locale
+    /// would have broken the generated source outright, since the value is interpolated raw.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string GetDateTimeAndTimeZone(DateTimeOffset dateTimeOffset)
     {
-        var shortDate = dateTimeOffset.DateTime.ToShortDateString();
-        var longTime = dateTimeOffset.DateTime.ToLongTimeString();
-        var shortTimeZone = GetShortTimeZone();
-        return $"{shortDate} {longTime} ({shortTimeZone})";
+        var date = dateTimeOffset.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var time = dateTimeOffset.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        var utcOffset = dateTimeOffset.ToString("zzz", CultureInfo.InvariantCulture);
+        return $"{date} {time} (UTC{utcOffset})";
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -193,25 +203,16 @@ public sealed record BuildVersion
         return new Version(majorVersion, minorVersion, buildNumber, buildRevision);
     }
 
+    /// <remarks>
+    /// InvariantCulture is load-bearing, not tidiness: these two values become the Build and
+    /// Revision parts of the assembly version. Without it the machine's culture chooses the
+    /// calendar and the digits, so a non-Gregorian locale would derive a different month and day,
+    /// and a locale with non-Latin digits would hand Convert.ToUInt16 something it cannot parse.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static VersionBuildInfo GetBuildInfo(DateTimeOffset buildTime) =>
-        new(Convert.ToUInt16(buildTime.ToString(Formats.MonthAndDay)),
-            Convert.ToUInt16(buildTime.ToString(Formats.HourAndMinute)));
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static string GetShortTimeZone()
-    {
-        var shortTimeZone = new StringBuilder();
-        var timeZoneParts = TimeZoneInfo.Local.StandardName.Split(
-            new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-        for (int i = 0; i < timeZoneParts.Length; i++)
-        {
-            shortTimeZone.Append(timeZoneParts[i][0]);
-        }
-
-        return shortTimeZone.ToString();
-    }
+        new(Convert.ToUInt16(buildTime.ToString(Formats.MonthAndDay, CultureInfo.InvariantCulture), CultureInfo.InvariantCulture),
+            Convert.ToUInt16(buildTime.ToString(Formats.HourAndMinute, CultureInfo.InvariantCulture), CultureInfo.InvariantCulture));
 
     private sealed record VersionBuildInfo(UInt16 Number, UInt16 Revision)
     {
