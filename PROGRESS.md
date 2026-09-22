@@ -52,6 +52,23 @@ broke, which contradicts seeing diagnostics at all and would itself be informati
 `BAUTOVERSIONING00`/`04` from warnings to hard errors, which looks identical to a real failure.
 `00`/`04` means the flag never arrived; `02`/`03` means it arrived but company/product did not.
 
+### `BuildVersion.TryGetFromFile` is correct but unreachable by consumers
+
+The intent is for consumers to call it from their own tests to read the stamp back off a built
+binary. They cannot. `Package.nuspec` ships the assembly to `analyzers\dotnet\cs` only, with
+`developmentDependency: true` and `IncludeBuildOutput=false`, so the compiler loads it and it never
+enters the consumer's reference set. There is no `lib/`. Confirmed by search: nothing outside this
+repo calls `TryGetFromFile` or references `Bennewitz.Ninja.AutoVersioning.SourceGenerators`.
+
+The correctness fix landed without closing this deliberately. Three ways to close it, in preference
+order:
+
+| Option | Trade-off |
+|---|---|
+| A separate `.Abstractions` package with a real `lib/netstandard2.0` | Cleanest. Keeps the analyzer a pure `developmentDependency` and ships no Roslyn. Most work |
+| Add `lib\netstandard2.0` to this package | One nuspec line, but publishes the whole generator assembly as a runtime reference, exposing Roslyn-dependent types that fail at runtime because `SuppressDependenciesWhenPacking` strips the dependency |
+| Document a `HintPath` straight at the analyzer DLL | No packaging change, but the path carries the version number and it is not a supported reference model |
+
 ## Constraints worth keeping
 
 - **SDK attribute suppressions belong in `Build.targets`, never `Build.props`.** A `.props` is
@@ -96,6 +113,19 @@ broke, which contradicts seeing diagnostics at all and would itself be informati
   drive MTP through the legacy VSTest target, and `dotnet test` forwards unrecognised flags to the
   test host, which rejects them and reports zero tests run with exit code 5 rather than failing
   loudly. Removing `global.json` reinstates the VSTest error.
+- **The CalVer stamp is packed into integers, so decompose it arithmetically, never through a
+  string.** `MMdd` and `HHmm` lose their leading zero once stored as `Version` parts: 08:45 is
+  stamped as `0845` and read back as `845`. `TryGetFromFile` used to feed that to
+  `DateTime.TryParseExact` against the four-character `"HHmm"` format and discard the returned
+  `bool`, so **every build between 01:00 and 09:59 silently read back as midnight** — on any
+  machine, not just an exotic locale. The same round-trip let the ambient culture pick the digits,
+  and an out-of-range value reached the `DateTimeOffset` constructor and threw
+  `ArgumentOutOfRangeException` straight out of a `Try` method (month 13, 30 February). It is now
+  `buildNumber / 100` and `buildNumber % 100` with explicit range validation, and
+  `TryGetFromFile` validates before constructing so an unrecognised version returns false rather
+  than throwing. `BuildVersionFromFileTests` emits real assemblies carrying chosen file versions —
+  `Compilation.Emit(path)` writes no Win32 version resource, so the probe must call
+  `CreateDefaultWin32Resources` and use the stream overload, or `FileVersionInfo` reads nothing.
 - **The generator's `.csproj` sits at the repository root**, so its default `**/*.cs` glob would
   compile `Tests/` into the netstandard2.0 analyzer assembly. `DefaultItemExcludes` holds it back.
   Keeping the test project in a subdirectory also leaves `dotnet build` at the root unambiguous,
