@@ -8,6 +8,10 @@
     <AssemblyName>Bennewitz.Ninja.AutoVersioning.SourceGenerators</AssemblyName>
     <RootNamespace>Bennewitz.Ninja.AutoVersioning</RootNamespace>
 
+    <!-- This project lives at the repository root, so its default **/*.cs glob would otherwise
+         compile the test project's sources into this netstandard2.0 assembly. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Tests\**</DefaultItemExcludes>
+
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!-- RS1032: diagnostic messageFormat intentionally uses \n for readable multi-line build output -->

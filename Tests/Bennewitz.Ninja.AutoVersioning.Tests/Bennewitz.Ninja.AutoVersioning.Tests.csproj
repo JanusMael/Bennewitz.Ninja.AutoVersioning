@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <IsPackable>false</IsPackable>
+    <SonarQubeExclude>true</SonarQubeExclude>
+
+    <!-- MSTest 4.x runs on Microsoft.Testing.Platform, which needs an executable host. -->
+    <OutputType>Exe</OutputType>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="4.3.3" />
+    <!-- Microsoft.CodeAnalysis.CSharp is PrivateAssets="all" in the generator project, so it does
+         not flow transitively. The tests walk the emitted syntax tree, so they need it directly. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Referenced as an ordinary library, not as an analyzer: these tests call the template
+         classes directly rather than driving a full compilation. -->
+    <ProjectReference Include="..\..\Bennewitz.Ninja.AutoVersioning.csproj" />
+  </ItemGroup>
+
+</Project>
