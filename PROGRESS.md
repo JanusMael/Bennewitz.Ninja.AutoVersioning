@@ -71,3 +71,11 @@ broke, which contradicts seeing diagnostics at all and would itself be informati
   malformed entry matches nothing and fails silently.
 - **`Versioning/BuildVersion.cs` and the MSBuild version derivation in `Build.props` are two
   expressions of the same CalVer algorithm** and must not drift.
+- **The generator emits printable ASCII (U+0020 to U+007E) plus exactly one deliberate exception,
+  U+2665.** The build name is `Built with ♥ {commitHash}`, or `Built with ♥` when no hash was
+  supplied; the heart is branding, not corruption. Measured on a real consumer build, it is stored
+  as UTF-16 in the Win32 `ProductVersion` resource and round-trips intact, with
+  `FileVersionInfo.GetVersionInfo(...).ProductVersion` comparing byte-identical to the runtime
+  `AssemblyInformationalVersion` attribute — so a consumer seeing those two disagree is looking at a
+  different cause. Two things that look like causes and are not: the `AddSource` calls already pass
+  `Encoding.UTF8`, and the source files are UTF-8 without a BOM, which Roslyn reads correctly.

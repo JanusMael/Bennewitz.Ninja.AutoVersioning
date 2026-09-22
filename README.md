@@ -58,7 +58,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyCopyright("Copyright 2026 [Release]")]
 [assembly: AssemblyVersion("2026.2.429.1435")]
 [assembly: AssemblyFileVersion("2026.2.429.1435")]
-[assembly: AssemblyInformationalVersion("Commit♥: abc1234def")]
+[assembly: AssemblyInformationalVersion("Built with ♥ abc1234def")]
 [assembly: AssemblyMetadata("CommitSha", "abc1234def")]
 [assembly: AssemblyMetadata("GITHUB_SHA", "abc1234def")]
 [assembly: AssemblyMetadata("PublicVersion", "3.1.0")]

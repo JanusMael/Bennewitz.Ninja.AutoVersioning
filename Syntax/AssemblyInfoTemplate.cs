@@ -97,13 +97,29 @@ public static class AssemblyInfoTemplate
         return list.ToSyntaxList();
     }
 
+    /// <summary>
+    /// Builds the <see cref="AssemblyInformationalVersionAttribute" /> value:
+    /// <c>Built with (heart) {commitHash}</c>, or just <c>Built with (heart)</c> when no commit
+    /// hash was supplied.
+    /// </summary>
+    /// <remarks>
+    /// The U+2665 is deliberate branding, not corruption. It is stored as UTF-16 in the Win32
+    /// <c>ProductVersion</c> resource and round-trips intact through
+    /// <c>FileVersionInfo.GetVersionInfo(...).ProductVersion</c>, which compares equal to the runtime
+    /// attribute. Guarded by <c>AssemblyInfoTemplateTests</c>, which pins the exact text and rejects
+    /// control characters, replacement characters and lone surrogates, so genuine mojibake still
+    /// fails the build while the heart is allowed through.
+    /// </remarks>
     private static string GetBuildName(string? commitHash)
     {
-        if (string.IsNullOrEmpty(commitHash))
+        // IsNullOrWhiteSpace, not IsNullOrEmpty, to match the guard on the CommitSha/GITHUB_SHA
+        // metadata attributes above: a CI variable that expanded to blanks must take the same
+        // branch in both places, rather than emitting a heart trailed by the blank value.
+        if (string.IsNullOrWhiteSpace(commitHash))
         {
             return "Built with ♥";
         }
 
-        return $"Commit♥: {commitHash}";
+        return $"Built with ♥ {commitHash}";
     }
 }
