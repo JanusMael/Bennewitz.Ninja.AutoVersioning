@@ -11,7 +11,8 @@
     "msbuild"
   ],
   "requiredChecks": [
-    "build"
+    "build",
+    "conventions"
   ],
   "content": [],
   "undocumented": {}
