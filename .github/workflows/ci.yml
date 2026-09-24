@@ -22,3 +22,28 @@ jobs:
         # global.json), and dotnet test forwards unrecognised flags to the test host, which
         # rejects them and reports zero tests run.
         run: dotnet test Tests/Bennewitz.Ninja.AutoVersioning.Tests/Bennewitz.Ninja.AutoVersioning.Tests.csproj -c Release
+
+  # The family conventions: documentation at the root and in every top-level directory, the
+  # description, topics, feature toggles and rulesets. See docs/repository-conventions.md in
+  # Bennewitz.Ninja.Templates.
+  #
+  # ⚠ Not yet a required check: it stays red until this repository's documentation lands, and a
+  # required red job would block every pull request in the meantime.
+  conventions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Check the repository conventions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check

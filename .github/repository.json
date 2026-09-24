@@ -1,0 +1,18 @@
+{
+  "description": "Roslyn incremental source generator for assembly metadata and timestamp-based versioning",
+  "homepage": "",
+  "topics": [
+    "csharp",
+    "dotnet",
+    "nuget",
+    "source-generator",
+    "roslyn",
+    "versioning",
+    "msbuild"
+  ],
+  "requiredChecks": [
+    "build"
+  ],
+  "content": [],
+  "undocumented": {}
+}
