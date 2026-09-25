@@ -1,0 +1,20 @@
+<Project>
+  <!-- Central package management: every package version in this repository lives here, and a
+       PackageReference names only the package. See docs/repository-conventions.md in
+       Bennewitz.Ninja.Templates, whose build-property check requires it. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="Generator">
+    <PackageVersion Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="4.14.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <PackageVersion Include="System.Collections.Immutable" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="MSTest" Version="4.3.3" />
+  </ItemGroup>
+</Project>

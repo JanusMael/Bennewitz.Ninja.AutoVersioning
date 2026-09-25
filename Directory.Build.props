@@ -1,0 +1,15 @@
+<Project>
+  <!-- The family's standard build properties (docs/repository-conventions.md in
+       Bennewitz.Ninja.Templates), for this repository's own projects.
+
+       ⚠ Not to be confused with Directory.Build.props.template beside it, which is sample content
+       for a CONSUMER of this package, and is not imported by anything here.
+
+       ⓘ This repository does not apply AutoVersioning to itself: a package cannot generate its own
+       build. .github/repository.json exempts that one rule, with the reason. -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyCompany>Bennewitz.Ninja</AssemblyCompany>
+  </PropertyGroup>
+</Project>

@@ -15,5 +15,13 @@
     "conventions"
   ],
   "content": [],
-  "undocumented": {}
+  "undocumented": {},
+  "props": {
+    "Bennewitz.Ninja.AutoVersioning": {
+      "AutoVersioning": "This is AutoVersioning itself: a package cannot generate its own build, and the tests exercise the generator through a ProjectReference."
+    },
+    "Bennewitz.Ninja.AutoVersioning.Tests": {
+      "AutoVersioning": "This is AutoVersioning itself: a package cannot generate its own build, and the tests exercise the generator through a ProjectReference."
+    }
+  }
 }
