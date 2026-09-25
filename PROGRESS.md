@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Latest release | `v2026.3.916` — published to NuGet.org, verified present in the CDN |
-| `main` | At `b7854e2`, in sync with `origin`. Past the tag by build, CI and documentation changes, none needing a release on its own. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
+| `main` | At `b5b3f9b` plus the `AnalyzerReleases` rollover, in sync with `origin`. Past the tag by build, CI and documentation changes, none needing a release on its own. The rollover files `BAUTOVERSIONING00`–`03` under `## Release 2026.2.429` and `04` under `## Release 2026.2.521`, read off the tagged trees rather than the tag dates; `Unshipped.md` is now empty. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
 | CI | green |
 
 Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` builds, packs, publishes via
@@ -76,17 +76,6 @@ order:
 | Add `lib\netstandard2.0` to this package | One nuspec line, but publishes the whole generator assembly as a runtime reference, exposing Roslyn-dependent types that fail at runtime because `SuppressDependenciesWhenPacking` strips the dependency |
 | Document a `HintPath` straight at the analyzer DLL | No packaging change, but the path carries the version number and it is not a supported reference model |
 
-### `AnalyzerReleases` was not rolled over at `v2026.3.916`
-
-`AnalyzerReleases.Shipped.md` is empty and all five `BAUTOVERSIONING` rules still sit in
-`AnalyzerReleases.Unshipped.md`, although `04` shipped in `2026.3.916` and `00`–`03` shipped well
-before it. The Releasing checklist in `AGENTS.md` prescribes moving the rows under
-`## Release <version>`; the step was missed when that tag was cut.
-
-Consumers see nothing from this, but it is the analyzer's release history and `RS2000`/`RS2001` read
-the two files as a pair. Closing it needs the tag that first carried `00`–`03` determined from the
-history rather than assumed, since putting them under `2026.3.916` would date them wrongly.
-
 ### Whether the diagnostic ids adopt the family `BN` scheme
 
 Bennewitz.Ninja.AssemblyQuality `2026.3.925` renamed its rules `AQ100n` → `BNAQ100n` and announced a
@@ -102,11 +91,19 @@ entry or a `#pragma warning disable BAUTOVERSIONING02` simply stops matching. It
 `id:` strings in `AssemblyInfoGenerator.cs`, both `AnalyzerReleases` files with the old ids under
 `### Removed Rules`, the README's Diagnostics table, the `BAUTOVERSIONING04` message that
 cross-references `00` by name, and the reminder target in `Build.props`; and it wants a release of
-its own with the break stated in the notes. Roll `AnalyzerReleases` over first, so the old ids have a
-recorded history to be removed from.
+its own with the break stated in the notes. The prerequisite is met: the old ids now have a recorded
+release history to be removed from.
 
 ## Constraints worth keeping
 
+- **The history has two roots, and `v2026.2.429` sits on the abandoned one.** `326b1f6` ("Initial
+  commit", 2026-04-29) is parentless, and everything `main` reaches starts there; the earlier root
+  `d257c5e` carries the lineage the `v2026.2.429` tag points into, which is *not* an ancestor of
+  `main`. So `git tag --contains <commit>` omits `v2026.2.429` for anything on `main`, and
+  `git log --follow` reports files added at `326b1f6` that existed before it. Archaeology across that
+  boundary has to read the tagged trees directly — `git show <tag>:<path>` — which is how the
+  `AnalyzerReleases` rollover established that `BAUTOVERSIONING00`–`03` shipped in `2026.2.429` and
+  `04` in `2026.2.521`. The nine tags do all correspond to published nuget.org versions.
 - **SDK attribute suppressions belong in `Build.targets`, never `Build.props`.** A `.props` is
   imported before the consuming project body, so gating on `GenerateAutoVersionedAssemblyInfo` there
   fails for projects that enable the generator in their own `.csproj` — symptom is seven `CS0579`
