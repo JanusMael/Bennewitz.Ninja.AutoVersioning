@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Latest release | `v2026.3.916` — published to NuGet.org, verified present in the CDN |
-| `main` | Past the tag by build and CI changes, none needing a release on its own. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
+| `main` | At `b7854e2`, in sync with `origin`. Past the tag by build, CI and documentation changes, none needing a release on its own. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
 | CI | green |
 
 Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` builds, packs, publishes via
