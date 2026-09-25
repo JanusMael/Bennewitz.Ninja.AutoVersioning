@@ -15,6 +15,13 @@ in the repo — `NUGET_USER` plus the nuget.org trusted-publishing policy is the
 `--generate-notes` produces an empty body for this repo, because commits land directly on `main`
 rather than through PRs. Release notes are written by hand after the workflow runs.
 
+One release per calendar day. A package version is the three-part `YYYY.Q.MMDD`, so a same-day
+second release has nowhere to go, and a four-part tag is not the answer: the fourth segment already
+means `HHmm` in `AutoVersion`, the stamp the generator puts on an assembly, so `2026.3.925.1` reads
+as a build at 00:01. Decided family-wide through Bennewitz.Ninja.Templates, relayed by the
+AssemblyQuality session after it hit the question on a same-day crash fix. `AutoPackageVersion`
+already computes the three-part form, so nothing here changed.
+
 ## Open
 
 ### Consumer reports `BAUTOVERSIONING` "not configured" errors, seen only in CI
@@ -68,6 +75,35 @@ order:
 | A separate `.Abstractions` package with a real `lib/netstandard2.0` | Cleanest. Keeps the analyzer a pure `developmentDependency` and ships no Roslyn. Most work |
 | Add `lib\netstandard2.0` to this package | One nuspec line, but publishes the whole generator assembly as a runtime reference, exposing Roslyn-dependent types that fail at runtime because `SuppressDependenciesWhenPacking` strips the dependency |
 | Document a `HintPath` straight at the analyzer DLL | No packaging change, but the path carries the version number and it is not a supported reference model |
+
+### `AnalyzerReleases` was not rolled over at `v2026.3.916`
+
+`AnalyzerReleases.Shipped.md` is empty and all five `BAUTOVERSIONING` rules still sit in
+`AnalyzerReleases.Unshipped.md`, although `04` shipped in `2026.3.916` and `00`–`03` shipped well
+before it. The Releasing checklist in `AGENTS.md` prescribes moving the rows under
+`## Release <version>`; the step was missed when that tag was cut.
+
+Consumers see nothing from this, but it is the analyzer's release history and `RS2000`/`RS2001` read
+the two files as a pair. Closing it needs the tag that first carried `00`–`03` determined from the
+history rather than assumed, since putting them under `2026.3.916` would date them wrongly.
+
+### Whether the diagnostic ids adopt the family `BN` scheme
+
+Bennewitz.Ninja.AssemblyQuality `2026.3.925` renamed its rules `AQ100n` → `BNAQ100n` and announced a
+family-wide `BN` + product-initials scheme (`BNAQ`, `BNXQ`, `BNCQ`). This repository's ids are
+`BAUTOVERSIONING00`–`04`, which do not fit it; the equivalent would be `BNAV00`–`04`.
+
+Nothing requires it today: `scripts/repo-conventions.cs` has no rule about diagnostic ids and
+`.github/repository.json` does not mention one. All three announced prefixes end in `Q`, so the
+scheme may be meant for the Quality analyzers rather than for a source generator.
+
+Adopting it is breaking for consumers, and silently so — a `NoWarn`, an `.editorconfig` severity
+entry or a `#pragma warning disable BAUTOVERSIONING02` simply stops matching. It would touch the five
+`id:` strings in `AssemblyInfoGenerator.cs`, both `AnalyzerReleases` files with the old ids under
+`### Removed Rules`, the README's Diagnostics table, the `BAUTOVERSIONING04` message that
+cross-references `00` by name, and the reminder target in `Build.props`; and it wants a release of
+its own with the break stated in the notes. Roll `AnalyzerReleases` over first, so the old ids have a
+recorded history to be removed from.
 
 ## Constraints worth keeping
 
