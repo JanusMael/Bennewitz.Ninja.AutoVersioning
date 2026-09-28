@@ -10,15 +10,15 @@ namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
 public class AssemblyInfoGenerator : IIncrementalGenerator
 {
     private static readonly DiagnosticDescriptor GeneratorNotEnabledDescriptor = new(
-        id: "BAUTOVERSIONING00",
+        id: "BNAV00",
         title: "Assembly Info Generator not enabled",
-        messageFormat: "Assembly info generator is installed but not enabled — see BAUTOVERSIONING04 for setup instructions.",
+        messageFormat: "Assembly info generator is installed but not enabled — see BNAV04 for setup instructions.",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor GeneratorSetupInstructionsDescriptor = new(
-        id: "BAUTOVERSIONING04",
+        id: "BNAV04",
         title: "Assembly Info Generator setup instructions",
         // First line is self-contained — build output panels only show line 1 of a multi-line message.
         // The full <PropertyGroup> snippet that follows is visible in IDE detail/hover panes.
@@ -38,7 +38,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor GenerationFailedDescriptor = new(
-        id: "BAUTOVERSIONING01",
+        id: "BNAV01",
         title: "Assembly Info Generation Failed",
         messageFormat: "Generator threw an exception: {0}",
         category: "SourceGenerator",
@@ -46,7 +46,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor AssemblyCompanyNotSetDescriptor = new(
-        id: "BAUTOVERSIONING02",
+        id: "BNAV02",
         title: "AssemblyCompany not configured",
         messageFormat: "AssemblyCompany is not set — add <AssemblyCompany>YourCompany</AssemblyCompany> to Directory.Build.props ([assembly: AssemblyCompany] will be empty without it)",
         category: "Configuration",
@@ -54,7 +54,7 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor AssemblyProductNotSetDescriptor = new(
-        id: "BAUTOVERSIONING03",
+        id: "BNAV03",
         title: "AssemblyProduct not configured",
         messageFormat: "AssemblyProduct is not set — add <AssemblyProduct>YourProduct</AssemblyProduct> to Directory.Build.props ([assembly: AssemblyProduct] will be empty without it)",
         category: "Configuration",

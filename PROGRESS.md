@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Latest release | `v2026.3.916` — published to NuGet.org, verified present in the CDN |
-| `main` | At `b5b3f9b` plus the `AnalyzerReleases` rollover, in sync with `origin`. Past the tag by build, CI and documentation changes, none needing a release on its own. The rollover files `BAUTOVERSIONING00`–`03` under `## Release 2026.2.429` and `04` under `## Release 2026.2.521`, read off the tagged trees rather than the tag dates; `Unshipped.md` is now empty. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
+| `main` | Past the tag by build, CI and documentation changes, and by one change that **does** need a release: the `BNAV` rename, recorded under Open. `04badcd`: the `AnalyzerReleases` rollover, filing `BAUTOVERSIONING00`–`03` under `## Release 2026.2.429` and `04` under `## Release 2026.2.521`, read off the tagged trees rather than the tag dates. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
 | CI | green |
 
 Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` builds, packs, publishes via
@@ -59,6 +59,9 @@ broke, which contradicts seeing diagnostics at all and would itself be informati
 `BAUTOVERSIONING00`/`04` from warnings to hard errors, which looks identical to a real failure.
 `00`/`04` means the flag never arrived; `02`/`03` means it arrived but company/product did not.
 
+The ids in this section are the ones every published version emits. Read `BNAV0n` for the same
+signals in logs from any build against `main`, or against whatever release first carries the rename.
+
 ### `BuildVersion.TryGetFromFile` is correct but unreachable by consumers
 
 The intent is for consumers to call it from their own tests to read the stamp back off a built
@@ -76,23 +79,26 @@ order:
 | Add `lib\netstandard2.0` to this package | One nuspec line, but publishes the whole generator assembly as a runtime reference, exposing Roslyn-dependent types that fail at runtime because `SuppressDependenciesWhenPacking` strips the dependency |
 | Document a `HintPath` straight at the analyzer DLL | No packaging change, but the path carries the version number and it is not a supported reference model |
 
-### Whether the diagnostic ids adopt the family `BN` scheme
+### The `BNAV` rename is in `main` and unreleased
 
-Bennewitz.Ninja.AssemblyQuality `2026.3.925` renamed its rules `AQ100n` → `BNAQ100n` and announced a
-family-wide `BN` + product-initials scheme (`BNAQ`, `BNXQ`, `BNCQ`). This repository's ids are
-`BAUTOVERSIONING00`–`04`, which do not fit it; the equivalent would be `BNAV00`–`04`.
+The diagnostic ids are `BNAV00`–`04`, renamed from `BAUTOVERSIONING00`–`04` to fit the family's
+`BN` + product-initials scheme announced by Bennewitz.Ninja.AssemblyQuality `2026.3.925`
+(`BNAQ`, `BNXQ`, `BNCQ`).
 
-Nothing requires it today: `scripts/repo-conventions.cs` has no rule about diagnostic ids and
-`.github/repository.json` does not mention one. All three announced prefixes end in `Q`, so the
-scheme may be meant for the Quality analyzers rather than for a source generator.
+The rename is breaking, and silently so — a `NoWarn`, an `.editorconfig` severity entry or a
+`#pragma warning disable BAUTOVERSIONING02` simply stops matching. The maintainer's call was that
+nothing consumes the ids that way today; the only consumer behaviour that depends on the
+diagnostics is `TreatWarningsAsErrors`, which does not name ids and is therefore unaffected.
 
-Adopting it is breaking for consumers, and silently so — a `NoWarn`, an `.editorconfig` severity
-entry or a `#pragma warning disable BAUTOVERSIONING02` simply stops matching. It would touch the five
-`id:` strings in `AssemblyInfoGenerator.cs`, both `AnalyzerReleases` files with the old ids under
-`### Removed Rules`, the README's Diagnostics table, the `BAUTOVERSIONING04` message that
-cross-references `00` by name, and the reminder target in `Build.props`; and it wants a release of
-its own with the break stated in the notes. The prerequisite is met: the old ids now have a recorded
-release history to be removed from.
+Nothing else remains to do in the source. `AnalyzerReleases.Unshipped.md` carries all five new ids
+under `### New Rules` and all five old ids under `### Removed Rules`, which `RS2000`/`RS2001`
+accept; the README, `AGENTS.md`, `Build.targets` and the `BNAV00` cross-reference all use the new
+form, and the README states the old ids and the upgrade action. `Build.props` never named an id, so
+the reminder target needed no change.
+
+**It still wants a release of its own with the break stated in the notes**, which needs the
+maintainer's go-ahead like any tag. Until that tag exists, every published version still emits the
+`BAUTOVERSIONING` ids.
 
 ## Constraints worth keeping
 

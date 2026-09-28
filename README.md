@@ -169,11 +169,13 @@ The package auto-imports two files via NuGet: `Build.props`, which declares the 
 
 | ID | Severity | Description |
 |---|---|---|
-| `BAUTOVERSIONING00` | Warning | Generator is installed but `GenerateAutoVersionedAssemblyInfo` is not set to `true` (single-line signal) |
-| `BAUTOVERSIONING01` | Warning | Generator threw an unexpected exception |
-| `BAUTOVERSIONING02` | Error | `AssemblyCompany` is not configured |
-| `BAUTOVERSIONING03` | Error | `AssemblyProduct` is not configured |
-| `BAUTOVERSIONING04` | Warning | Multi-line setup snippet emitted alongside BAUTOVERSIONING00 — shows the required `Directory.Build.props` configuration |
+| `BNAV00` | Warning | Generator is installed but `GenerateAutoVersionedAssemblyInfo` is not set to `true` (single-line signal) |
+| `BNAV01` | Warning | Generator threw an unexpected exception |
+| `BNAV02` | Error | `AssemblyCompany` is not configured |
+| `BNAV03` | Error | `AssemblyProduct` is not configured |
+| `BNAV04` | Warning | Multi-line setup snippet emitted alongside BNAV00 — shows the required `Directory.Build.props` configuration |
+
+These ids were `BAUTOVERSIONING00`–`04` up to and including `2026.3.916`. If you suppress one by id — a `NoWarn`, an `.editorconfig` severity entry or a `#pragma warning disable` — update it to the `BNAV` form when you upgrade; the old id silently stops matching. `TreatWarningsAsErrors` is unaffected, since it does not name ids.
 
 ---
 

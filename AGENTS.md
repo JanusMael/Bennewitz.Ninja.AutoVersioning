@@ -23,13 +23,13 @@ layout is flat: one top-level directory per group of generator source.
 | Path | What it holds |
 |---|---|
 | `Bennewitz.Ninja.AutoVersioning.csproj` | The generator project: netstandard2.0, `IsRoslynComponent`, assembly `Bennewitz.Ninja.AutoVersioning.SourceGenerators`, packed through `Package.nuspec` |
-| `AssemblyInfoGenerator.cs` | The `IIncrementalGenerator`: reads `build_property.*`, reports `BAUTOVERSIONING00`–`04`, adds `AutoVersionedAssemblyInfo.g.cs` and `DirectoryBuildInfo.g.cs` |
+| `AssemblyInfoGenerator.cs` | The `IIncrementalGenerator`: reads `build_property.*`, reports `BNAV00`–`04`, adds `AutoVersionedAssemblyInfo.g.cs` and `DirectoryBuildInfo.g.cs` |
 | `Build.props` | Shipped to consumers as `Bennewitz.Ninja.AutoVersioning.props`: the `CompilerVisibleProperty` items, `BuildTimestamp`, `AutoVersion` / `AutoPackageVersion`, and the setup-reminder target. Not imported by this repository's own build |
 | `Build.targets` | Shipped as `Bennewitz.Ninja.AutoVersioning.targets`: turns off the SDK attributes the generator emits |
 | `Package.nuspec` | What the package contains, file by file |
 | `Pack.ps1` | Interactive local build and pack of Debug and Release into `packages/` |
 | `BannedSymbols.txt` | Roslyn APIs banned by `RS0030`; see `Syntax/AGENTS.md` |
-| `AnalyzerReleases.Shipped.md`, `AnalyzerReleases.Unshipped.md` | Analyzer release tracking for the `BAUTOVERSIONING` diagnostics |
+| `AnalyzerReleases.Shipped.md`, `AnalyzerReleases.Unshipped.md` | Analyzer release tracking for the `BNAV` diagnostics, and the `BAUTOVERSIONING` ids they were renamed from |
 | `Directory.Build.props.template`, `Build.ps1.template`, `Build.sh.template` | Files for consumers to copy, packed at the package root so the README's links resolve |
 | `global.json` | Opts `dotnet test` into Microsoft.Testing.Platform |
 | `Versioning/` | `BuildVersion`, the CalVer algorithm, and its comparer |
@@ -50,11 +50,11 @@ layout is flat: one top-level directory per group of generator source.
 | The SDK attribute suppressions stay in `Build.targets`; `BuildTimestamp` and the `AutoVersion` derivation stay in `Build.props`, ungated | A consumer enabling the generator in its own `.csproj` gets `CS0579` duplicate attributes and an empty `BuildTimestamp` | Comments in both files; nothing automated |
 | Every attribute `AssemblyInfoTemplate` emits that the SDK also generates has its `GenerateAssembly*Attribute` set to false in `Build.targets` | `CS0579` in every consumer | Nothing automated |
 | Each `CompilerVisibleProperty` in `Build.props` matches a `build_property.*` key read in `AssemblyInfoGenerator.Initialize` | The generator reads the property as absent, silently | Nothing automated |
-| `Build.props` and `Build.targets` are packed under the package id, into both `build\` and `buildMultiTargeting\` | NuGet never imports them, or a multi-targeting consumer misses them, and the generator reports `BAUTOVERSIONING00` although enabled | `Package.nuspec` |
+| `Build.props` and `Build.targets` are packed under the package id, into both `build\` and `buildMultiTargeting\` | NuGet never imports them, or a multi-targeting consumer misses them, and the generator reports `BNAV00` although enabled | `Package.nuspec` |
 | The `AutoVersion` derivation in `Build.props` computes what `BuildVersion.CalculateAbsoluteVersion`, `GetQuarter` and `GetBuildInfo` compute | A package's version disagrees with the assembly stamped inside it | The warning in `Build.props`; nothing automated |
 | Every `DiagnosticDescriptor` id in `AssemblyInfoGenerator` has a row in `AnalyzerReleases.Shipped.md` or `AnalyzerReleases.Unshipped.md` | Release tracking loses the rule's history | `RS2000` / `RS2001` from Microsoft.CodeAnalysis.Analyzers, reading the `AdditionalFiles` in the csproj |
 | Consumer files keep their `.template` suffix and stay in `Package.nuspec` | As `Directory.Build.props`, MSBuild would import it into this repository's own build; unpacked, the README's links break on nuget.org | `Package.nuspec` |
-| `README.md`, `Directory.Build.props.template` and the `BAUTOVERSIONING04` message describe the same setup | A consumer follows one and gets another | Nothing automated |
+| `README.md`, `Directory.Build.props.template` and the `BNAV04` message describe the same setup | A consumer follows one and gets another | Nothing automated |
 
 ## Commands
 
@@ -80,14 +80,14 @@ into `AnalyzerReleases.Shipped.md` under `## Release <version>`. Tag `vYYYY.Q.MM
 only with the maintainer's go-ahead. Then confirm the version on nuget.org, not only a green run.
 
 **Adding a diagnostic:** a `DiagnosticDescriptor` in `AssemblyInfoGenerator.cs` with the next
-`BAUTOVERSIONINGnn` id, a row in `AnalyzerReleases.Unshipped.md`, and a row in the README's
+`BNAVnn` id, a row in `AnalyzerReleases.Unshipped.md`, and a row in the README's
 Diagnostics table. A multi-line message keeps its first line self-contained; `RS1032` is off for
 that reason.
 
 **Adding an MSBuild property the generator reads:** a `CompilerVisibleProperty` in `Build.props`, a
 `build_property.<Name>` read in `AssemblyInfoGenerator.Initialize`, and a row in the README's
 Configuration Reference. A property consumers must set also goes into `Directory.Build.props.template`,
-the `BAUTOVERSIONING04` message and the reminder target in `Build.props`.
+the `BNAV04` message and the reminder target in `Build.props`.
 
 **Adding a top-level directory:** give it an `AGENTS.md` and a `CLAUDE.md` containing `@AGENTS.md`,
 or exempt it in `.github/repository.json` under `undocumented` with the reason. If it holds C# that
