@@ -84,6 +84,12 @@ only with the maintainer's go-ahead. Then confirm the version on nuget.org, not 
 Diagnostics table. A multi-line message keeps its first line self-contained; `RS1032` is off for
 that reason.
 
+The prefix is `BN` plus the product's initials, fixed family-wide — `BNAQ` in
+Bennewitz.Ninja.AssemblyQuality, `BNXQ` in XamlQuality, `BNCQ` in CodeQuality — and **a prefix never
+changes once one id in it has shipped**, because every rename breaks consumers' suppressions
+silently. Take a new number, never a new prefix. The family's reasoning is AssemblyQuality's
+`## Decisions`; `PROGRESS.md` records why `BAUTOVERSIONING` → `BNAV` was nonetheless taken.
+
 **Adding an MSBuild property the generator reads:** a `CompilerVisibleProperty` in `Build.props`, a
 `build_property.<Name>` read in `AssemblyInfoGenerator.Initialize`, and a row in the README's
 Configuration Reference. A property consumers must set also goes into `Directory.Build.props.template`,

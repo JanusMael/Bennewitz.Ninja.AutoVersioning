@@ -175,7 +175,7 @@ The package auto-imports two files via NuGet: `Build.props`, which declares the 
 | `BNAV03` | Error | `AssemblyProduct` is not configured |
 | `BNAV04` | Warning | Multi-line setup snippet emitted alongside BNAV00 — shows the required `Directory.Build.props` configuration |
 
-These ids were `BAUTOVERSIONING00`–`04` up to and including `2026.3.916`. If you suppress one by id — a `NoWarn`, an `.editorconfig` severity entry or a `#pragma warning disable` — update it to the `BNAV` form when you upgrade; the old id silently stops matching. `TreatWarningsAsErrors` is unaffected, since it does not name ids.
+**Renamed after `2026.3.916`.** Up to and including that version the IDs were `BAUTOVERSIONING00`–`04`. The numbers are unchanged, so `BAUTOVERSIONING04` is now `BNAV04`: rename any suppression or filter that names an old ID, or it stops matching — a `NoWarn`, an `.editorconfig` severity entry or a `#pragma warning disable`. `TreatWarningsAsErrors` is unaffected, since it does not name IDs. The prefix is `BN` plus the product's initials, shared across the Bennewitz.Ninja packages, and it will not change again.
 
 ---
 

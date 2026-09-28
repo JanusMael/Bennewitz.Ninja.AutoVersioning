@@ -81,24 +81,31 @@ order:
 
 ### The `BNAV` rename is in `main` and unreleased
 
-The diagnostic ids are `BNAV00`–`04`, renamed from `BAUTOVERSIONING00`–`04` to fit the family's
-`BN` + product-initials scheme announced by Bennewitz.Ninja.AssemblyQuality `2026.3.925`
-(`BNAQ`, `BNXQ`, `BNCQ`).
+The diagnostic ids are `BNAV00`–`04`, renamed from `BAUTOVERSIONING00`–`04`. The family scheme is
+`BN` + the product's initials with the rule number kept, so the numbers do not move: `BNAV04` is the
+old `BAUTOVERSIONING04`. Four letters, because an analyzer's id shares one flat namespace with every
+analyzer a project loads and a two-letter prefix is the likeliest to collide. The scheme and its
+reasoning are Bennewitz.Ninja.AssemblyQuality's `## Decisions`; `BNAQ`, `BNXQ` and `BNCQ` are the
+siblings.
 
-The rename is breaking, and silently so — a `NoWarn`, an `.editorconfig` severity entry or a
-`#pragma warning disable BAUTOVERSIONING02` simply stops matching. The maintainer's call was that
-nothing consumes the ids that way today; the only consumer behaviour that depends on the
-diagnostics is `TreatWarningsAsErrors`, which does not name ids and is therefore unaffected.
+**This is the family's second exception to "a prefix never changes once one ID in it has shipped",
+and it is a much larger one than the first.** That rule exists because every rename breaks
+consumers' suppressions silently. AssemblyQuality took the first exception for `AQ` → `BNAQ` while
+exactly one version was published and used only as a test dependency. `BAUTOVERSIONING` has shipped
+in nine published versions since `2026.2.429`. The maintainer's call on 2026-09-28 was that nothing
+consumes these ids by name today and that `TreatWarningsAsErrors` — the only consumer behaviour that
+depends on the diagnostics — does not name ids, so it is unaffected. Recorded here because the rule
+is worth keeping afterwards: the prefix does not change again.
 
 Nothing else remains to do in the source. `AnalyzerReleases.Unshipped.md` carries all five new ids
 under `### New Rules` and all five old ids under `### Removed Rules`, which `RS2000`/`RS2001`
 accept; the README, `AGENTS.md`, `Build.targets` and the `BNAV00` cross-reference all use the new
-form, and the README states the old ids and the upgrade action. `Build.props` never named an id, so
-the reminder target needed no change.
+form, and the README carries the migration note in AssemblyQuality's wording. `Build.props` never
+named an id, so the reminder target needed no change.
 
-**It still wants a release of its own with the break stated in the notes**, which needs the
-maintainer's go-ahead like any tag. Until that tag exists, every published version still emits the
-`BAUTOVERSIONING` ids.
+**It still wants a release of its own**, which needs the maintainer's go-ahead like any tag. The
+release notes carry the old and new ids, as AssemblyQuality's `v2026.3.925` notes do. Until that tag
+exists, every published version still emits the `BAUTOVERSIONING` ids.
 
 ## Constraints worth keeping
 
