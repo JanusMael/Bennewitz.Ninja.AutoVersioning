@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| Latest release | `v2026.3.916` — published to NuGet.org, verified present in the CDN |
-| `main` | Past the tag by build, CI and documentation changes, and by one change that **does** need a release: the `BNAV` rename, recorded under Open. `04badcd`: the `AnalyzerReleases` rollover, filing `BAUTOVERSIONING00`–`03` under `## Release 2026.2.429` and `04` under `## Release 2026.2.521`, read off the tagged trees rather than the tag dates. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
+| Latest release | `v2026.3.928` — the `BNAV` rename. Present in the CDN, and a probe consumer restored it from nuget.org (`.nupkg.metadata` names the feed as the source), built clean, and came out stamped `2026.3.928.1728` with `Built with ♥`. Release notes are hand-written and carry the old and new ids |
+| `main` | At the release tag plus the `AnalyzerReleases` rollover for it. `04badcd`: the earlier rollover, filing `BAUTOVERSIONING00`–`03` under `## Release 2026.2.429` and `04` under `## Release 2026.2.521`, read off the tagged trees rather than the tag dates. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
 | CI | green |
 
 Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` builds, packs, publishes via
@@ -79,36 +79,21 @@ order:
 | Add `lib\netstandard2.0` to this package | One nuspec line, but publishes the whole generator assembly as a runtime reference, exposing Roslyn-dependent types that fail at runtime because `SuppressDependenciesWhenPacking` strips the dependency |
 | Document a `HintPath` straight at the analyzer DLL | No packaging change, but the path carries the version number and it is not a supported reference model |
 
-### The `BNAV` rename is in `main` and unreleased
-
-The diagnostic ids are `BNAV00`–`04`, renamed from `BAUTOVERSIONING00`–`04`. The family scheme is
-`BN` + the product's initials with the rule number kept, so the numbers do not move: `BNAV04` is the
-old `BAUTOVERSIONING04`. Four letters, because an analyzer's id shares one flat namespace with every
-analyzer a project loads and a two-letter prefix is the likeliest to collide. The scheme and its
-reasoning are Bennewitz.Ninja.AssemblyQuality's `## Decisions`; `BNAQ`, `BNXQ` and `BNCQ` are the
-siblings.
-
-**This is the family's second exception to "a prefix never changes once one ID in it has shipped",
-and it is a much larger one than the first.** That rule exists because every rename breaks
-consumers' suppressions silently. AssemblyQuality took the first exception for `AQ` → `BNAQ` while
-exactly one version was published and used only as a test dependency. `BAUTOVERSIONING` has shipped
-in nine published versions since `2026.2.429`. The maintainer's call on 2026-09-28 was that nothing
-consumes these ids by name today and that `TreatWarningsAsErrors` — the only consumer behaviour that
-depends on the diagnostics — does not name ids, so it is unaffected. Recorded here because the rule
-is worth keeping afterwards: the prefix does not change again.
-
-Nothing else remains to do in the source. `AnalyzerReleases.Unshipped.md` carries all five new ids
-under `### New Rules` and all five old ids under `### Removed Rules`, which `RS2000`/`RS2001`
-accept; the README, `AGENTS.md`, `Build.targets` and the `BNAV00` cross-reference all use the new
-form, and the README carries the migration note in AssemblyQuality's wording. `Build.props` never
-named an id, so the reminder target needed no change.
-
-**It still wants a release of its own**, which needs the maintainer's go-ahead like any tag. The
-release notes carry the old and new ids, as AssemblyQuality's `v2026.3.925` notes do. Until that tag
-exists, every published version still emits the `BAUTOVERSIONING` ids.
-
 ## Constraints worth keeping
 
+- **The diagnostic ids are `BNAV00`–`04`, and the prefix does not change again.** The family scheme
+  is `BN` + the product's initials with the rule number kept — `BNAQ`, `BNXQ`, `BNCQ` — four letters
+  because an analyzer's id shares one flat namespace with every analyzer a project loads, where a
+  two-letter prefix collides and a seventeen-letter one helps nobody. The scheme and its reasoning
+  are Bennewitz.Ninja.AssemblyQuality's `## Decisions`, which is the family's source for rule ids;
+  neither `docs/repository-conventions.md` nor `scripts/repo-conventions.cs` says anything about
+  them. `BAUTOVERSIONING00`–`04` shipped up to `2026.3.916`; `BNAV00`–`04` from `2026.3.928`, with
+  the numbers unchanged. That rename is the family's **second** exception to "a prefix never changes
+  once one id in it has shipped", and a far larger one than the first — AssemblyQuality took `AQ` →
+  `BNAQ` with one published version used only as a test dependency, against nine public versions
+  here. The maintainer took it knowingly on 2026-09-28: nothing consumes the ids by name, and
+  `TreatWarningsAsErrors`, the only consumer behaviour that depends on these diagnostics, does not
+  name ids. Take a new number next time, never a new prefix.
 - **The history has two roots, and `v2026.2.429` sits on the abandoned one.** `326b1f6` ("Initial
   commit", 2026-04-29) is parentless, and everything `main` reaches starts there; the earlier root
   `d257c5e` carries the lineage the `v2026.2.429` tag points into, which is *not* an ancestor of
