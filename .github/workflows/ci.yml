@@ -22,6 +22,12 @@ jobs:
         # global.json), and dotnet test forwards unrecognised flags to the test host, which
         # rejects them and reports zero tests run.
         run: dotnet test Tests/Bennewitz.Ninja.AutoVersioning.Tests/Bennewitz.Ninja.AutoVersioning.Tests.csproj -c Release
+      # The release's last gate before its push, run here too, so a package that packs without
+      # being declared in packages.push or packages.local fails a pull request rather than a tag.
+      - name: Pack
+        run: dotnet pack -c Release --no-build --nologo --output ./packages/Release
+      - name: Assert packed matches declared
+        run: dotnet run --file scripts/assert-packages.cs -- ./packages/Release
 
   # The family conventions: documentation at the root and in every top-level directory, the
   # description, topics, feature toggles and rulesets. See docs/repository-conventions.md in

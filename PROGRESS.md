@@ -8,9 +8,13 @@
 | `main` | At the release tag plus the `AnalyzerReleases` rollover for it. `04badcd`: the earlier rollover, filing `BAUTOVERSIONING00`–`03` under `## Release 2026.2.429` and `04` under `## Release 2026.2.521`, read off the tagged trees rather than the tag dates. `f093331`: the family's standard build properties (`plans/00004` in Bennewitz.Ninja.Templates) through a root `Directory.Build.props`, and every package version in `Directory.Packages.props`; the packed nupkg keeps the same 11 entries and no dependencies, and the analyzer assembly's `AssemblyCompany` becomes `Bennewitz.Ninja`. `2631253`, and again for the `nuget` topic rule (Templates `fb6961a`): `scripts/repo-conventions.cs` is the template's current copy |
 | CI | green |
 
-Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` builds, packs, publishes via
-NuGet Trusted Publishing (OIDC), and creates the GitHub release. No long-lived NuGet API key exists
-in the repo — `NUGET_USER` plus the nuget.org trusted-publishing policy is the whole credential story.
+Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` builds, packs, asserts the
+packed ids against `packages.push` / `packages.local`, publishes via NuGet Trusted Publishing (OIDC),
+and creates the GitHub release. The push and the release assets name each id in `packages.push`; no
+`*.nupkg` glob is pushed, which is step 1 of `plans/00009` in Bennewitz.Ninja.Templates and what its
+queued conventions rule checks. A dispatch with `version` blank is a credential preflight that lists
+those ids and publishes nothing. No long-lived NuGet API key exists in the repo — the `NUGET_USER`
+secret plus the nuget.org trusted-publishing policy is the whole credential story.
 
 `--generate-notes` produces an empty body for this repo, because commits land directly on `main`
 rather than through PRs. Release notes are written by hand after the workflow runs.
