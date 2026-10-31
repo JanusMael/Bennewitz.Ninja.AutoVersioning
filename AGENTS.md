@@ -31,7 +31,9 @@ layout is flat: one top-level directory per group of generator source.
 | `packages.push`, `packages.local` | The package ids `release.yml` publishes, by name, and the ids that pack but must never be published. `scripts/assert-packages.cs` fails CI and the release on a packed id in neither |
 | `BannedSymbols.txt` | Roslyn APIs banned by `RS0030`; see `Syntax/AGENTS.md` |
 | `AnalyzerReleases.Shipped.md`, `AnalyzerReleases.Unshipped.md` | Analyzer release tracking for the `BNAV` diagnostics, and the `BAUTOVERSIONING` ids they were renamed from |
-| `Directory.Build.props.template`, `Build.ps1.template`, `Build.sh.template` | Files for consumers to copy, packed at the package root so the README's links resolve |
+| `Directory.Build.props.template`, `Build.ps1.template`, `Build.sh.template` | Files for consumers to copy, packed at the package root. The README links each on GitHub, since nuget.org resolves no relative link |
+| `Directory.Build.targets` | Links the friend-grant files into every project. Not to be confused with `Build.targets`, which consumers get |
+| `AssemblyInfo.InternalsVisibleTo.cs`, `AssemblyInfo.InternalsVisibleTo.External.cs` | The family's solution-wide friend grants: the first written by `repo-conventions.cs grants`, the second for grants to other repositories, by hand |
 | `global.json` | Opts `dotnet test` into Microsoft.Testing.Platform |
 | `Versioning/` | `BuildVersion`, the CalVer algorithm, and its comparer |
 | `Syntax/` | The Roslyn syntax builders behind `AssemblyInfoTemplate` |
@@ -46,7 +48,7 @@ layout is flat: one top-level directory per group of generator source.
 
 | Invariant | Failure if broken | Guarded by |
 |---|---|---|
-| The project sits at the root, so its default `**/*.cs` glob would compile every C# file beneath it. `DefaultItemExcludes` keeps `Tests\**` and `scripts\**` out. A new top-level directory holding C# that is not generator source is added there | Test sources compile into the netstandard2.0 analyzer and fail it; a file-based app's `#!` line fails the build with `CS9314` | `DefaultItemExcludes` in `Bennewitz.Ninja.AutoVersioning.csproj`; CI's `build` job |
+| The project sits at the root, so its default `**/*.cs` glob would compile every C# file beneath it. `DefaultItemExcludes` keeps `Tests\**`, `scripts\**` and the root friend-grant files, which `Directory.Build.targets` links in, out. A new top-level directory holding C# that is not generator source is added there | Test sources compile into the netstandard2.0 analyzer and fail it; a file-based app's `#!` line fails the build with `CS9314`; a grant file is compiled twice | `DefaultItemExcludes` in `Bennewitz.Ninja.AutoVersioning.csproj`; CI's `build` job |
 | The package carries one assembly, in `analyzers\dotnet\cs`, and no dependencies (`IncludeBuildOutput` false, `SuppressDependenciesWhenPacking`). Code on the generator's path uses only what the compiler host supplies: Roslyn and the BCL | A type from a NuGet dependency is missing in the consumer's compiler, and the generator fails there, never here | `Package.nuspec`; nothing automated |
 | The SDK attribute suppressions stay in `Build.targets`; `BuildTimestamp` and the `AutoVersion` derivation stay in `Build.props`, ungated | A consumer enabling the generator in its own `.csproj` gets `CS0579` duplicate attributes and an empty `BuildTimestamp` | Comments in both files; nothing automated |
 | Every attribute `AssemblyInfoTemplate` emits that the SDK also generates has its `GenerateAssembly*Attribute` set to false in `Build.targets` | `CS0579` in every consumer | Nothing automated |
@@ -54,7 +56,8 @@ layout is flat: one top-level directory per group of generator source.
 | `Build.props` and `Build.targets` are packed under the package id, into both `build\` and `buildMultiTargeting\` | NuGet never imports them, or a multi-targeting consumer misses them, and the generator reports `BNAV00` although enabled | `Package.nuspec` |
 | The `AutoVersion` derivation in `Build.props` computes what `BuildVersion.CalculateAbsoluteVersion`, `GetQuarter` and `GetBuildInfo` compute | A package's version disagrees with the assembly stamped inside it | The warning in `Build.props`; nothing automated |
 | Every `DiagnosticDescriptor` id in `AssemblyInfoGenerator` has a row in `AnalyzerReleases.Shipped.md` or `AnalyzerReleases.Unshipped.md` | Release tracking loses the rule's history | `RS2000` / `RS2001` from Microsoft.CodeAnalysis.Analyzers, reading the `AdditionalFiles` in the csproj |
-| Consumer files keep their `.template` suffix and stay in `Package.nuspec` | As `Directory.Build.props`, MSBuild would import it into this repository's own build; unpacked, the README's links break on nuget.org | `Package.nuspec` |
+| Consumer files keep their `.template` suffix and stay in `Package.nuspec` | As `Directory.Build.props`, MSBuild would import it into this repository's own build | `Package.nuspec` |
+| The packed `README.md` links only absolutely | It is the package's page on nuget.org, where a relative link resolves against nuget.org and goes nowhere | `scripts/assert-packages.cs` in CI's `build` job and before the push in `release.yml` |
 | `release.yml` pushes each id in `packages.push` by name, never a `*.nupkg` glob, and every id `dotnet pack` produces is in `packages.push` or `packages.local` | A glob publishes whatever pack produced, and a nuget.org version is permanent | `scripts/assert-packages.cs` in CI's `build` job and before the push in `release.yml` |
 | `README.md`, `Directory.Build.props.template` and the `BNAV04` message describe the same setup | A consumer follows one and gets another | Nothing automated |
 

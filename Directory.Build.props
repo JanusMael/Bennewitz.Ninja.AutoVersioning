@@ -12,4 +12,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyCompany>Bennewitz.Ninja</AssemblyCompany>
   </PropertyGroup>
+
+  <!-- PDB policy: portable in Debug for local source stepping; embedded in Release so the
+       shipped binary carries its own symbols and nothing loose has to travel with it. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
 </Project>
