@@ -10,8 +10,10 @@
 
     <!-- This project lives at the repository root, so its default **/*.cs glob would otherwise
          compile the test project's sources into this netstandard2.0 assembly, and the file-based
-         apps under scripts/ too, which fail it with CS9314 on their `#!` line. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);Tests\**;scripts\**</DefaultItemExcludes>
+         apps under scripts/ too, which fail it with CS9314 on their `#!` line. The friend-grant
+         files at the root are linked in by Directory.Build.targets; globbed as well, each would be
+         compiled twice. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Tests\**;scripts\**;AssemblyInfo.InternalsVisibleTo*.cs</DefaultItemExcludes>
 
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>

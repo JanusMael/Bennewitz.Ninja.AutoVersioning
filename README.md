@@ -33,7 +33,7 @@ A [Roslyn incremental source generator](https://learn.microsoft.com/en-us/dotnet
 
 > **Note:** The package's auto-imported `Build.targets` suppresses the 8 SDK-generated attributes that this generator also emits (e.g. `AssemblyVersion`, `AssemblyCopyright`), so you do not need to disable anything yourself. Do **not** add `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>`: it is redundant, and broader than intended — that switch disables *every* SDK-generated attribute, including `InternalsVisibleTo` declared via MSBuild `<InternalsVisibleTo>` items. (A hand-written `InternalsVisibleTo` in a compiled `.cs` file is unaffected either way.)
 
-A ready-to-use template is available at [`Directory.Build.props.template`](Directory.Build.props.template).
+A ready-to-use template is available at [`Directory.Build.props.template`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/Directory.Build.props.template).
 
 **3. Build.** The generator runs automatically — no further setup needed.
 
@@ -161,9 +161,9 @@ The package auto-imports two files via NuGet: `Build.props`, which declares the 
 
 ### Timestamp Consistency in Multi-Project Builds
 
-`BuildTimestamp` keeps the version consistent across every project in a solution build. See [`docs/MultiProjectBuildTimestamps.md`](docs/MultiProjectBuildTimestamps.md) for how it works and what alternative approaches were considered.
+`BuildTimestamp` keeps the version consistent across every project in a solution build. See [`docs/MultiProjectBuildTimestamps.md`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/docs/MultiProjectBuildTimestamps.md) for how it works and what alternative approaches were considered.
 
-> **TL;DR:** For CI, or any local build where an exact guarantee matters more than convenience, use `-p:BuildTimestamp=...` to fix the value explicitly instead of relying on evaluation-time capture. Ready-to-use wrappers are available at [`Build.ps1.template`](Build.ps1.template) (Windows/PowerShell 7+) and [`Build.sh.template`](Build.sh.template) (Linux/macOS/bash).
+> **TL;DR:** For CI, or any local build where an exact guarantee matters more than convenience, use `-p:BuildTimestamp=...` to fix the value explicitly instead of relying on evaluation-time capture. Ready-to-use wrappers are available at [`Build.ps1.template`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/Build.ps1.template) (Windows/PowerShell 7+) and [`Build.sh.template`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/Build.sh.template) (Linux/macOS/bash).
 
 ### Diagnostics
 
