@@ -17,4 +17,10 @@
   <ItemGroup Label="Testing">
     <PackageVersion Include="MSTest" Version="4.3.3" />
   </ItemGroup>
+
+  <ItemGroup Label="Analysis">
+    <!-- Microsoft.VisualStudio.Threading.Analyzers, for two of its rules; Directory.Build.props
+         says which and turns the rest off. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+  </ItemGroup>
 </Project>
