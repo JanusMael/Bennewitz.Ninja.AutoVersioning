@@ -7,12 +7,14 @@ File-based C# apps. Run every one with `dotnet run --file`: from this root, a ba
 |---|---|
 | `repo-conventions.cs` | Checks, and applies, the family's repository conventions: the documentation in every top-level directory, `.github/repository.json`, and the GitHub settings and rulesets. **A copy**: the canonical file is `templates/bbpkg/scripts/repo-conventions.cs` in Bennewitz.Ninja.Templates |
 | `assert-packages.cs` | Reads the `<id>` of every `.nupkg` in a directory and fails unless the set is exactly the ids in `packages.push` and `packages.local` at the root. Run from the root, which is where it looks for those files. **A copy**: the canonical file is `templates/bbpkg/scripts/assert-packages.cs` in Bennewitz.Ninja.Templates; its usage line omits `--file` because a `bbpkg` root holds no project |
+| `release-target.cs` | Resolves what a release publishes from the tag or the dispatch: the version, which must be `YYYY.Q.MMDD` with its date's quarter, the tag, and the ids from `packages.push`. `release.yml` runs it before anything is built. **A copy**: the canonical file is `templates/bbpkg/scripts/release-target.cs` in Bennewitz.Ninja.Templates |
 
 ```bash
 dotnet run --file scripts/repo-conventions.cs -- check
 dotnet run --file scripts/repo-conventions.cs -- check --admin
 dotnet run --file scripts/repo-conventions.cs -- apply --dry-run
 dotnet run --file scripts/assert-packages.cs -- ./packages/Release
+dotnet run --file scripts/release-target.cs -- resolve --event push --ref v<version>
 ```
 
 `check` is what CI's `conventions` job runs; `check --admin` and `apply` need the maintainer's `gh`
@@ -23,6 +25,6 @@ is the last gate before the push.
 
 | Rule | Why | Guarded by |
 |---|---|---|
-| **`repo-conventions.cs` and `assert-packages.cs` are never edited here.** They change in Bennewitz.Ninja.Templates and is copied over whole | Every family repository runs the same enforcer; a local edit is drift | `check --repo` run from Bennewitz.Ninja.Templates |
+| **`repo-conventions.cs`, `assert-packages.cs` and `release-target.cs` are never edited here.** They change in Bennewitz.Ninja.Templates and is copied over whole | Every family repository runs the same enforcer; a local edit is drift | `check --repo` run from Bennewitz.Ninja.Templates |
 | This directory stays in `DefaultItemExcludes` in the root csproj | The root project's glob would compile the script into the analyzer, and its `#!` line fails the build with `CS9314` | CI's `build` job |
 | A script run from a workflow passes `--file` | The bare form binds to the root project | `ci.yml` |

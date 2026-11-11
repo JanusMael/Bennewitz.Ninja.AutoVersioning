@@ -1,21 +1,29 @@
 name: Release
 
-# Triggered by a version tag (v2026.2.429), or dispatched by hand.
+# Triggered by a version tag (v1.2.3, or <family>/v1.2.3 where .github/repository.json declares
+# families), or dispatched by hand.
 #
 # ⛔ A PUBLISHED NUGET VERSION CAN NEVER BE REPLACED. Everything this repository otherwise
-# treats as recoverable becomes permanent past the push step, so the gates below — the
-# conventions, build, pack, and the packed-vs-declared check — all run before it, and
-# --skip-duplicate makes a re-run of a completed release a no-op rather than a failure.
+# treats as recoverable becomes permanent past the push step, so the gates below — build,
+# test, pack, and the packed-vs-declared check — all run before it, and --skip-duplicate makes
+# a re-run of a completed release a no-op rather than a failure.
+#
+# ⭐ WHAT A RELEASE PUBLISHES is resolved by scripts/release-target.cs, not by bash here: the tag or
+# the dispatch's inputs, into the version, the tag, the family and the ids. A repository without
+# families releases everything in packages.push from a v<version> tag. With families, each family
+# releases alone from <family>/v<version>, and a tag of the other kind is refused before anything
+# is built.
 
 on:
   push:
     tags:
       - 'v*.*.*'
+      - '*/v*.*.*'
   # Two dispatch modes, decided by whether `version` is filled in:
   #
   #   BLANK    credential preflight — logs in to NuGet.org and stops. Proves the trusted-
-  #            publishing policy, the id-token permission and the NUGET_USER secret all line up,
-  #            and lists the ids a tag would publish, WITHOUT cutting a release.
+  #            publishing policy, the id-token permission and the NUGET_USER variable all line up,
+  #            WITHOUT cutting a release. Run this before the first tag.
   #   FILLED   a real release, which is the path to use when a tag already exists.
   #
   # ⚠ The preflight has to live in THIS workflow rather than one of its own: the OIDC token is
@@ -24,45 +32,79 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'NuGet version (e.g. 2026.2.429). LEAVE BLANK to only preflight credentials.'
+        description: 'Version to release (e.g. 2026.3.920). LEAVE BLANK to only preflight credentials.'
         required: false
+      family:
+        description: 'The family to release, where .github/repository.json declares families. Blank otherwise.'
+        required: false
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      id-token: write   # required for NuGet.org Trusted Publishing (OIDC) — see NuGet/login below
+      # Required for NuGet.org Trusted Publishing (OIDC) — see the NuGet/login step below.
+      # ⭐ This is what replaces a long-lived API key: the token is minted per run and expires,
+      # so there is no secret in this repository that would still be valid if it leaked.
+      id-token: write
 
     env:
-      # Read at JOB level so the steps below can test it: a secret cannot be tested in a step's
-      # own `if`, but an env value read from one can.
-      NUGET_USER: ${{ secrets.NUGET_USER }}
+      # ⭐ A VARIABLE, not a secret, and deliberately so. Trusted publishing carries no secret to
+      # leak: this is only the nuget.org profile name the OIDC token is exchanged against, and a
+      # profile name is public.
+      #
+      # ⛔ Storing it as a secret actively costs you the one thing you need when it is wrong.
+      # GitHub masks a secret in logs, so a bad value turns nuget.org's already-ambiguous 401 into
+      #     No matching trust policy owned by user '***' was found
+      # which hides whether the value was a username, an email, or — the natural mistake, given
+      # the push below takes --api-key — an API key. Set it with:
+      #     gh variable set NUGET_USER --body <your-nuget.org-profile-name>
+      #
+      # Read at JOB level so the steps below can test it. (A secret could not be tested in a
+      # step's own `if` at all; a variable can, but the job-level read keeps one home for it.)
+      NUGET_USER: ${{ vars.NUGET_USER }}
       # A tag push is always a release; a dispatch is one only when a version was supplied.
       RELEASING: ${{ github.event_name == 'push' || inputs.version != '' }}
 
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Every tag, so a family's release notes start from that family's previous tag.
+          fetch-depth: 0
+
+      # global.json here pins no SDK, only the test runner, so the major version is named.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.x'
 
-      - name: Resolve version and tag
-        # Tag push: strip leading 'v' from the tag (e.g. v2026.2.429 → 2026.2.429)
-        # Manual run: use the version input; derive tag by prepending 'v'
+      # The version comes from the TAG, not from a file, so the tag and the package agree by
+      # construction rather than by someone remembering to bump both. Sets VERSION, TAG, FAMILY,
+      # IDS, PREVIOUS_TAG and LATEST for every step below; refuses a tag or a dispatch that names no
+      # release this repository makes, and a version that is not YYYY.Q.MMDD.
+      - name: Resolve what this release publishes
         if: env.RELEASING == 'true'
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-            echo "TAG=v${{ inputs.version }}" >> $GITHUB_ENV
-          else
-            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
-            echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-          fi
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_FAMILY: ${{ inputs.family }}
+        # --file throughout: from this root, a bare `dotnet run <file.cs>` binds to the root project.
+        run: >
+          dotnet run --file scripts/release-target.cs -- resolve
+          --event "$EVENT" --ref "$REF" --version "$INPUT_VERSION" --family "$INPUT_FAMILY"
+          --github-env "$GITHUB_ENV"
 
-      # ⛔ Fail LOUDLY rather than publish nothing quietly. Without this, a tag with the secret
+      # ⛔ Fail LOUDLY rather than publish nothing quietly. Without this, a tag with the variable
       # unset skips the push (which is gated on NUGET_USER) but still creates the GitHub Release
-      # below — a green run, a release page, and no package.
+      # below — a green run, a release page, and no package. That false green is worse than a
+      # failure, because the next person reads the release as evidence the package shipped.
       - name: Refuse to release without NUGET_USER
         if: env.RELEASING == 'true' && env.NUGET_USER == ''
         run: |
@@ -71,26 +113,35 @@ jobs:
           exit 1
 
       # ⛔ Nothing publishes from a repository missing what the family conventions prescribe: its
-      # documents, a replaced marker, a description. Runs in the preflight too, so a dispatch with
-      # the version blank reports it before a tag does. A setting that has merely drifted does not
+      # documents, a replaced marker, a description. A package page links back here, so an empty
+      # repository page is part of what ships. Runs in the preflight too, so a dispatch with the
+      # version blank reports it before a tag does. A setting that has merely drifted does not
       # stop a release; CI's `conventions` job reports that.
       - name: Refuse to release a repository the conventions reject
         env:
           GH_TOKEN: ${{ github.token }}
         run: dotnet run --file scripts/repo-conventions.cs -- check --release
 
+      # The root project is the one package; there is no solution, so each step names what it runs.
       - name: Build
         if: env.RELEASING == 'true'
-        run: dotnet build -c Release --nologo -p:Version=${{ env.VERSION }}
+        run: dotnet build Bennewitz.Ninja.AutoVersioning.csproj -c Release --nologo -warnaserror -p:Version=${{ env.VERSION }}
 
+      # ⚠ No --nologo: Microsoft.Testing.Platform rejects it and reports zero tests run, exit code 5.
+      - name: Test
+        if: env.RELEASING == 'true'
+        run: dotnet test Tests/Bennewitz.Ninja.AutoVersioning.Tests/Bennewitz.Ninja.AutoVersioning.Tests.csproj -c Release
+
+      # This repository declares no families, so release-target.cs refuses a <family>/v tag before
+      # anything is built, and the release packs the root project alone.
       - name: Pack
         if: env.RELEASING == 'true'
-        run: dotnet pack -c Release --no-build --nologo -p:Version=${{ env.VERSION }} --output ./packages/Release
+        run: dotnet pack Bennewitz.Ninja.AutoVersioning.csproj -c Release --no-build --nologo -p:Version="$VERSION" --output ./packages/Release
 
-      # ⛔ The last gate before anything becomes permanent. It checks what pack ACTUALLY produced,
-      # reading each id from the <id> element inside the .nuspec rather than parsing filenames,
-      # against packages.push and packages.local. A package in neither list stops the run, and so
-      # does a declared id that was not packed.
+      # ⛔ The last gate before anything becomes permanent. PackagingTests already checked the
+      # project files; this checks what pack ACTUALLY produced, reading each id from the <id>
+      # element inside the .nuspec rather than parsing filenames. A package that appears here and
+      # in neither list, or for a family, in some other family, stops the run.
       - name: Assert packed matches declared
         if: env.RELEASING == 'true'
         run: dotnet run --file scripts/assert-packages.cs -- ./packages/Release
@@ -98,20 +149,16 @@ jobs:
       # Kept immediately before the push: the token this returns is short-lived, and a slow step
       # in between is how it expires before it is used.
       - name: NuGet Login (Trusted Publishing)
-        # Exchanges this job's GitHub OIDC token for a short-lived NuGet.org API key — no
-        # long-lived NUGET_API_KEY secret to store or rotate. Requires a Trusted Publishing
-        # policy on nuget.org (owner/repo/workflow filename must match this job exactly) and
-        # the NUGET_USER repo secret set to the nuget.org account name tied to that policy.
         id: nuget-login
         if: env.NUGET_USER != ''
         uses: NuGet/login@v1
         with:
-          user: ${{ secrets.NUGET_USER }}
+          user: ${{ vars.NUGET_USER }}
 
       # ⚠ A successful login proves a policy matched — NEVER that it covers every id. The exchange
       # succeeds before any package id is considered, so no preflight can detect a coverage gap.
-      # The list below is read from packages.push so the comparison against nuget.org is against
-      # what a tag would actually push rather than something remembered.
+      # The pattern below is computed from packages.push so the comparison against nuget.org is
+      # against something generated rather than remembered.
       - name: Report the preflight result
         if: env.RELEASING != 'true'
         run: |
@@ -119,19 +166,21 @@ jobs:
             echo "::error::NUGET_USER is not set, so no publish would happen on a tag."
             exit 1
           fi
-          ids=$(grep -v '^[[:space:]]*#' packages.push | grep -v '^[[:space:]]*$')
-          echo "A v*.*.* tag will publish:"
-          printf '  %s\n' $ids
           {
             echo "### Trusted publishing verified"
-            echo "A \`v*.*.*\` tag will publish:"
+            echo "Logged in as \`$NUGET_USER\`. Releases from this repository publish, each id from"
+            echo "its family's tag where \`.github/repository.json\` declares families:"
             echo ""
-            printf -- '- `%s`\n' $ids
+            grep -v '^[[:space:]]*#' packages.push | grep -v '^[[:space:]]*$' | sed 's/^/- `/; s/$/`/'
             echo ""
             echo "Confirm ONE policy on nuget.org whose Glob Patterns cover every id above, and"
             echo "NOT a policy per id: one exchange mints one key scoped to one policy, so a second"
             echo "policy is never consulted and its package is rejected 403 — after the first is"
             echo "already permanent."
+            # ⚠ Matches a line that HAS a real id, rather than `grep -qv` for "not a comment".
+            # A blank line is not a comment either, so the negated form fired on any
+            # packages.local containing one — printing the warning header below with nothing
+            # under it. packages.local's own header promises blank lines are ignored.
             if grep -qE '^[[:space:]]*[^#[:space:]]' packages.local 2>/dev/null; then
               echo ""
               echo "⛔ That pattern must NOT match anything in packages.local:"
@@ -139,18 +188,20 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # ⚠ NAMED, NEVER GLOBBED — and driven by packages.push rather than a list repeated here, so
-      # the declaration has exactly one home. A glob publishes whatever happens to be in the
-      # folder, and a published version is permanent, so the one time it picks up something
-      # unintended is the one time it cannot be undone.
+      # ⚠ NAMED, NEVER GLOBBED — and driven by IDS, which release-target.cs read from packages.push
+      # or from the family's entry, rather than a list repeated here, so the declaration has exactly
+      # one home. A glob publishes whatever happens to be in the folder, and a published version is
+      # permanent, so the one time it picks up something unintended is the one time it cannot be
+      # undone.
       - name: Push to NuGet.org
         if: env.RELEASING == 'true' && env.NUGET_USER != ''
         run: |
           set -euo pipefail
+          read -ra ids <<< "$IDS"
           targets=()
-          while IFS= read -r id; do
+          for id in "${ids[@]}"; do
             targets+=("./packages/Release/${id}.${VERSION}.nupkg")
-          done < <(grep -v '^[[:space:]]*#' packages.push | grep -v '^[[:space:]]*$')
+          done
           printf 'Pushing %s\n' "${targets[@]}"
           dotnet nuget push "${targets[@]}" \
             --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
@@ -159,14 +210,25 @@ jobs:
 
       # Same list, same reason. A release asset can be deleted, so a glob here fails QUIETLY —
       # which is why it is easy to leave globbed and worth not leaving globbed.
+      #
+      # ⚠ A FAMILY'S NOTES ARE WRITTEN BY release-target.cs, never generated by GitHub, which lists
+      # every pull request merged in the repository, whichever family it touched: its commits since
+      # its previous tag that changed its projects, its README or the build every family shares.
+      # LATEST marks the release "Latest" only when no tag of any family is newer.
       - name: Create GitHub Release
         if: env.RELEASING == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          read -ra ids <<< "$IDS"
           assets=()
-          while IFS= read -r id; do
+          for id in "${ids[@]}"; do
             assets+=("./packages/Release/${id}.${VERSION}.nupkg")
-          done < <(grep -v '^[[:space:]]*#' packages.push | grep -v '^[[:space:]]*$')
-          gh release create "${TAG}" --title "${TAG}" --generate-notes "${assets[@]}"
+          done
+          notes=(--generate-notes)
+          if [ -n "$FAMILY" ]; then
+            dotnet run --file scripts/release-target.cs -- notes --family "$FAMILY" --previous "$PREVIOUS_TAG" --out family-notes.md
+            notes=(--notes-file family-notes.md "--latest=$LATEST")
+          fi
+          gh release create "${TAG}" --title "${TAG}" "${notes[@]}" "${assets[@]}"

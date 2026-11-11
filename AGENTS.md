@@ -58,7 +58,9 @@ layout is flat: one top-level directory per group of generator source.
 | Every `DiagnosticDescriptor` id in `AssemblyInfoGenerator` has a row in `AnalyzerReleases.Shipped.md` or `AnalyzerReleases.Unshipped.md` | Release tracking loses the rule's history | `RS2000` / `RS2001` from Microsoft.CodeAnalysis.Analyzers, reading the `AdditionalFiles` in the csproj |
 | Consumer files keep their `.template` suffix and stay in `Package.nuspec` | As `Directory.Build.props`, MSBuild would import it into this repository's own build | `Package.nuspec` |
 | The packed `README.md` links only absolutely | It is the package's page on nuget.org, where a relative link resolves against nuget.org and goes nowhere | `scripts/assert-packages.cs` in CI's `build` job and before the push in `release.yml` |
-| `release.yml` pushes each id in `packages.push` by name, never a `*.nupkg` glob, and every id `dotnet pack` produces is in `packages.push` or `packages.local` | A glob publishes whatever pack produced, and a nuget.org version is permanent | `scripts/assert-packages.cs` in CI's `build` job and before the push in `release.yml` |
+| `release.yml` pushes the ids `scripts/release-target.cs` resolves from `packages.push`, by name, never a `*.nupkg` glob, and every id `dotnet pack` produces is in `packages.push` or `packages.local` | A glob publishes whatever pack produced, and a nuget.org version is permanent | `PackagingTests`; `scripts/assert-packages.cs` in CI's `build` job and before the push in `release.yml` |
+| The version is the tag, `vYYYY.Q.MMDD`, three parts with the quarter of its date | The package and the tag disagree, or a version sorts where nobody meant it to; a published version can never be replaced | `scripts/release-target.cs resolve`, the first step of `release.yml`, before anything is built |
+| The compiled generator passes AssemblyQuality's BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005 | A consumer's compiler loads the compiled shape, which a source analyser does not see | `Tests/…/Architecture/AssemblyQualityTests.cs` |
 | `README.md`, `Directory.Build.props.template` and the `BNAV04` message describe the same setup | A consumer follows one and gets another | Nothing automated |
 
 ## Commands
@@ -68,6 +70,7 @@ dotnet build -c Release --nologo
 dotnet test Tests/Bennewitz.Ninja.AutoVersioning.Tests/Bennewitz.Ninja.AutoVersioning.Tests.csproj -c Release
 dotnet pack -c Release --no-build --nologo -p:Version=<version> --output ./packages/Release
 dotnet run --file scripts/assert-packages.cs -- ./packages/Release
+dotnet run --file scripts/release-target.cs -- resolve --event push --ref v<version>
 dotnet run --file scripts/repo-conventions.cs -- check
 ```
 
@@ -82,10 +85,11 @@ dotnet run --file scripts/repo-conventions.cs -- check
 
 **Releasing:** CI green on the commit to release. Move the rows of `AnalyzerReleases.Unshipped.md`
 into `AnalyzerReleases.Shipped.md` under `## Release <version>`. Tag `vYYYY.Q.MMDD` and push;
-`release.yml` takes the version from the tag and pushes exactly the ids in `packages.push`. A
-dispatch with `version` blank is a dry run: it logs in and lists those ids. A version on nuget.org
-can never be replaced, so tag only with the maintainer's go-ahead. Then confirm the version on
-nuget.org, not only a green run.
+`release.yml` resolves the tag through `scripts/release-target.cs`, which refuses any other shape or
+a quarter that is not the date's, and pushes exactly the ids in `packages.push`. A dispatch with
+`version` blank is a dry run: it logs in and lists those ids. A version on nuget.org can never be
+replaced, so tag only with the maintainer's go-ahead. Then confirm the version on nuget.org, not
+only a green run. The runbook is `docs/publishing.md`.
 
 **Adding a diagnostic:** a `DiagnosticDescriptor` in `AssemblyInfoGenerator.cs` with the next
 `BNAVnn` id, a row in `AnalyzerReleases.Unshipped.md`, and a row in the README's

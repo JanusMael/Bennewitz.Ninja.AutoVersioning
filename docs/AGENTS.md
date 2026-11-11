@@ -1,10 +1,11 @@
 # AGENTS.md — `docs/`
 
-Documents for consumers of the package.
+Documents for consumers of the package, and the maintainer's release runbook.
 
 | Document | What it is | Kept in step with |
 |---|---|---|
 | `MultiProjectBuildTimestamps.md` | Why `BuildTimestamp` is captured at property evaluation, and the alternatives considered | `BuildTimestamp` in `Build.props`, and the `-p:BuildTimestamp` override in `Build.ps1.template` and `Build.sh.template` |
+| `publishing.md` | The release runbook: the trusted-publishing policy, `NUGET_USER`, the preflight, the version, tagging and verifying against nuget.org. Not packed. From the bbpkg template | `.github/workflows/release.yml` and `scripts/release-target.cs` |
 
 ## Rules
 

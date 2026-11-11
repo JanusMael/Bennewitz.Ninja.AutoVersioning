@@ -19,6 +19,8 @@
     <!-- Microsoft.CodeAnalysis.CSharp is PrivateAssets="all" in the generator project, so it does
          not flow transitively. The tests walk the emitted syntax tree, so they need it directly. -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <!-- AssemblyQuality's rules, run over the generator's compiled assembly. -->
+    <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,16 +5,19 @@
 | | |
 |---|---|
 | Latest release | `v2026.4.1031` — the sync to Bennewitz.Ninja.Templates `2026.4.1031`: the packed README links absolutely and the analyzer assembly carries its symbols. nuget.org lists it. The one before, `v2026.3.928`, was the `BNAV` rename |
-| `main` | At `v2026.4.1031` plus the sync to Bennewitz.Ninja.Templates `2026.4.1103`. `scripts/repo-conventions.cs` is that release's, which also checks that markdown is checked out as LF; a root `.gitattributes`, the template's, is what gives it that. `Microsoft.VisualStudio.Threading.Analyzers` 18.12.1 is referenced privately, with only `VSTHRD101` and `VSTHRD110` on, the family's decision of 2026-11-03; neither reports anything here. `check` conforms, 45 of 45 tests pass, and the packed nupkg gains no dependency. Nothing the package ships changes, so no release follows from this |
+| `main` | At `v2026.4.1031` plus the sync to Bennewitz.Ninja.Templates `2026.4.1103`. `scripts/repo-conventions.cs` is that release's, which also checks that markdown is checked out as LF; a root `.gitattributes`, the template's, is what gives it that. `Microsoft.VisualStudio.Threading.Analyzers` 18.12.1 is referenced privately, with only `VSTHRD101` and `VSTHRD110` on, the family's decision of 2026-11-03; neither reports anything here. `check` conforms, 45 of 45 tests pass, and the packed nupkg gains no dependency. Nothing the package ships changes, so no release follows from this. **Then caught up with the bbpkg template** (2026-11-11, by the maintainer's choice, from the Templates session): the two things every bbpkg repository has had since it was generated, which the pins-only syncs never delivered, as JsonC found and fixed in its #11 and #12. `scripts/release-target.cs` and the template's `release.yml`, which resolves every release through it; `docs/publishing.md`; `Packaging/PackagingTests` and `Architecture/AssemblyQualityTests` (BNAQ1001, 1002, 1004, 1005 over the compiled generator, AssemblyQuality `2026.4.1031`), both ported to MSTest, each guard canaried red. `NUGET_USER` is now a repository variable, as in every other family repository; the old secret is unread. The repository's first blank-version preflight, run `43050490199` on the pull request's branch, logged in with the variable and published nothing. 55 of 55 tests pass; nothing the package ships changes |
 | CI | green |
 
-Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` builds, packs, asserts the
-packed ids against `packages.push` / `packages.local`, publishes via NuGet Trusted Publishing (OIDC),
-and creates the GitHub release. The push and the release assets name each id in `packages.push`; no
-`*.nupkg` glob is pushed, which is step 1 of `plans/00009` in Bennewitz.Ninja.Templates and what its
-queued conventions rule checks. A dispatch with `version` blank is a credential preflight that lists
-those ids and publishes nothing. No long-lived NuGet API key exists in the repo — the `NUGET_USER`
-secret plus the nuget.org trusted-publishing policy is the whole credential story.
+Releases are cut by pushing a `vYEAR.QUARTER.MMDD` tag; `release.yml` resolves it through
+`scripts/release-target.cs`, which refuses any other shape, a quarter that is not the date's, and a
+`<family>/v` tag, since this repository declares no families. It then builds, tests, packs, asserts
+the packed ids against `packages.push` / `packages.local`, publishes via NuGet Trusted Publishing
+(OIDC), and creates the GitHub release. The push and the release assets name each resolved id; no
+`*.nupkg` glob is pushed, which is step 1 of `plans/00009` in Bennewitz.Ninja.Templates, and
+`PackagingTests` holds the workflow to it. A dispatch with `version` blank is a credential preflight
+that lists those ids and publishes nothing. No long-lived NuGet API key exists in the repo: the
+`NUGET_USER` variable plus the nuget.org trusted-publishing policy is the whole credential story.
+`docs/publishing.md` is the runbook.
 
 `--generate-notes` produces an empty body for this repo, because commits land directly on `main`
 rather than through PRs. Release notes are written by hand after the workflow runs.

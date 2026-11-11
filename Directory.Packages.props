@@ -16,6 +16,8 @@
 
   <ItemGroup Label="Testing">
     <PackageVersion Include="MSTest" Version="4.3.3" />
+    <!-- The family's own assembly rules, run as tests over the generator's compiled assembly. -->
+    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
   </ItemGroup>
 
   <ItemGroup Label="Analysis">
