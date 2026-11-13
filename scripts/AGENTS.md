@@ -7,7 +7,7 @@ File-based C# apps. Run every one with `dotnet run --file`: from this root, a ba
 |---|---|
 | `repo-conventions.cs` | Checks, and applies, the family's repository conventions: the documentation in every top-level directory, `.github/repository.json`, and the GitHub settings and rulesets. **A copy**: the canonical file is `templates/bbpkg/scripts/repo-conventions.cs` in Bennewitz.Ninja.Templates |
 | `assert-packages.cs` | Reads the `<id>` of every `.nupkg` in a directory and fails unless the set is exactly the ids in `packages.push` and `packages.local` at the root. Run from the root, which is where it looks for those files. **A copy**: the canonical file is `templates/bbpkg/scripts/assert-packages.cs` in Bennewitz.Ninja.Templates; its usage line omits `--file` because a `bbpkg` root holds no project |
-| `release-target.cs` | Resolves what a release publishes from the tag or the dispatch: the version, which must be `YYYY.Q.MMDD` with its date's quarter, the tag, and the ids from `packages.push`. `release.yml` runs it before anything is built. **A copy**: the canonical file is `templates/bbpkg/scripts/release-target.cs` in Bennewitz.Ninja.Templates |
+| `release-target.cs` | Resolves what a release publishes from the tag or the dispatch: the version, which must be `YYYY.Q.MMDD` with its date's quarter and not below the newest nuget.org lists for one of the ids unless nuget.org already lists it, the tag, and the ids from `packages.push`. `release.yml` runs it before anything is built. **A copy**: the canonical file is `templates/bbpkg/scripts/release-target.cs` in Bennewitz.Ninja.Templates |
 
 ```bash
 dotnet run --file scripts/repo-conventions.cs -- check
