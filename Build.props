@@ -13,12 +13,36 @@
       <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
   -->
   <!--
-    Capture the build timestamp once during MSBuild property evaluation — before any
-    compilation target runs. Because all projects in a solution evaluate properties at
-    roughly the same time, this ensures a consistent version number across every project
-    in a multi-project build, whether driven by the IDE or the CLI.
+    Capture the build timestamp during MSBuild property evaluation — before any compilation
+    target runs, so the value never depends on how long compilation takes.
 
-    For an exact guarantee on CI, override this via the command line:
+    TWO LINES, NOT ONE
+    ==================
+    A Debug build takes its DAY (midnight); every other configuration takes the current time.
+
+    A stamp is an INPUT to compilation: it reaches the compiler through
+    obj/…/<project>.GeneratedMSBuildEditorConfig.editorconfig, which CoreCompile counts among
+    its inputs, and a recompiled project yields a new reference assembly, which is an input to
+    everything referencing it. So a fresh stamp every build recompiles the whole graph every
+    build. Measured on four projects: an unchanged Debug build went from 4 of 4 compiled to
+    0 of 4. The day is the coarsest hold that costs nothing, AutoPackageVersion being precise
+    to the day already; a finer one recompiles everything whenever it ticks over.
+
+    Release keeps a stamp per build on purpose — it is the build that leaves the machine,
+    usually from a clean checkout that compiles everything anyway.
+
+    An EMPTY Configuration counts as Debug. This file is imported by NuGet before
+    Microsoft.NET.Sdk.props, where an empty Configuration becomes Debug, and `dotnet build` of
+    a single project with no -c reaches here with it still empty. Measured at this evaluation
+    point: `dotnet build` and `dotnet run` with no -c give [], a solution build and -c Debug
+    give Debug, and `dotnet pack` and `dotnet publish` with no -c give Release. Written as
+    == 'Debug' alone, the hold would miss `dotnet build src/Leaf/Leaf.csproj` entirely.
+
+    The cost is that a Debug assembly no longer records its time of day: BuildRelease reads
+    00:00:00, which is the stamp faithfully, not the instant the build ran. A project needing
+    its own build time sets BuildTimestamp for itself.
+
+    For an exact guarantee on CI, or to override the hold, set this via the command line:
       dotnet build -p:BuildTimestamp=$(date +%Y%m%d%H%M%S)   # bash / GitHub Actions
       dotnet build /p:BuildTimestamp=yyyyMMddHHmmss           # cmd (format manually)
     Use LOCAL time on the machine that runs the build, as shown above — the generator parses

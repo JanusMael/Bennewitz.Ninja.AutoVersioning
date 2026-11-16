@@ -92,8 +92,8 @@ Use `DirectoryBuildInfo.BuildRelease` wherever you need the build version at run
 | `CopyrightHolder` | Name shown in the copyright attribute — defaults to `AssemblyCompany` if omitted | No |
 | `CommitSha` | Git commit SHA | No |
 | `PublicVersion` | Your app's public-facing version string | No |
-| `Configuration` | `Debug` / `Release` — set automatically by MSBuild | Auto |
-| `BuildTimestamp` | Build start time in `yyyyMMddHHmmss` format — captured automatically at MSBuild evaluation time (before any project compiles), ensuring a consistent version across all projects in a multi-project solution build. Override on CI for an exact guarantee: `dotnet build -p:BuildTimestamp=$(date +%Y%m%d%H%M%S)` | Auto |
+| `Configuration` | `Debug` / `Release` — set automatically by MSBuild. An empty value counts as `Debug` for the hold below, because the package's props are imported before the SDK applies its default | Auto |
+| `BuildTimestamp` | Build start time in `yyyyMMddHHmmss` format, captured at MSBuild evaluation time, before any project compiles. **In `Debug` it is held to the day** — midnight — so repeated builds reuse one value and an unchanged build compiles nothing; every other configuration captures the current time. Set it yourself to override either, on CI or per project: `dotnet build -p:BuildTimestamp=$(date +%Y%m%d%H%M%S)` | Auto |
 | `AutoVersion` | **Output.** The four-part version `YEAR.QUARTER.MMdd.HHmm` the generator stamps, derived from `BuildTimestamp` during property evaluation so MSBuild can read it too. Overridable | Auto |
 | `AutoPackageVersion` | **Output.** The same version without the time component: `YEAR.QUARTER.MMdd`. Overridable | Auto |
 
@@ -163,7 +163,11 @@ The package auto-imports two files via NuGet: `Build.props`, which declares the 
 
 `BuildTimestamp` keeps the version consistent across every project in a solution build. See [`docs/MultiProjectBuildTimestamps.md`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/docs/MultiProjectBuildTimestamps.md) for how it works and what alternative approaches were considered.
 
-> **TL;DR:** For CI, or any local build where an exact guarantee matters more than convenience, use `-p:BuildTimestamp=...` to fix the value explicitly instead of relying on evaluation-time capture. Ready-to-use wrappers are available at [`Build.ps1.template`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/Build.ps1.template) (Windows/PowerShell 7+) and [`Build.sh.template`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/Build.sh.template) (Linux/macOS/bash).
+**A Debug build holds its stamp to the day.** A stamp is an input to compilation, so a fresh one every build is a reason to recompile every project every time — and because a recompiled project yields a new reference assembly, that propagates to everything referencing it. Holding Debug to midnight costs the version nothing: `AutoPackageVersion` is already only precise to the day. Measured on four projects, an unchanged Debug build went from compiling 4 of 4 to **0 of 4**, and a body edit in the root library from 4 of 4 to 1 of 4.
+
+The cost is that a Debug assembly no longer records the time of day it was built: `DirectoryBuildInfo.BuildRelease` reads `00:00:00`, which is the stamp reported faithfully rather than the instant the build happened. Release is unaffected and keeps a stamp per build.
+
+> **TL;DR:** For CI, or any build outside Debug where an exact guarantee matters more than convenience, use `-p:BuildTimestamp=...` to fix the value explicitly instead of relying on evaluation-time capture. It overrides the Debug hold too, so a project that needs its own build time can set one for itself. Ready-to-use wrappers are available at [`Build.ps1.template`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/Build.ps1.template) (Windows/PowerShell 7+) and [`Build.sh.template`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/Build.sh.template) (Linux/macOS/bash).
 
 ### Diagnostics
 

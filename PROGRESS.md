@@ -42,7 +42,7 @@ frozen. Drift from it is recorded here, never edited into it.
 | 3 · The hold in `Build.props` | **done**; the suite is green, 72 of 72 | Below |
 | 4 · `BNAV05` and the validating condition | **done**; 89 of 89 | Below |
 | 5 · `VersionDerivationTests` | **done**; 97 of 97, and proven red both ways | Below |
-| 6 · The documents | not started | |
+| 6 · The documents | **done**; `check` and `assert-packages` both pass | Below |
 | 7 · The `AGENTS.md` invariants | not started | |
 | 8 · A release | the maintainer's, not started | |
 
@@ -250,6 +250,36 @@ nor `Incremental/VersionDerivationTests.cs`, and its closing sentence — *"Noth
 those are exercised only by building a consuming project"* — has been wrong since step 1. Building a
 consuming project is now exactly what those three do. Steps 1 and 4 each left this behind; step 5 is
 naming it rather than making the same omission a third time.
+
+### Step 6, as built
+
+Decisions 8 and 9, in five files. `check` conforms, `assert-packages` reports *"Each README of
+`packages.push` links only absolutely"*, and the suite stays 97 of 97.
+
+| File | What changed |
+|---|---|
+| `docs/MultiProjectBuildTimestamps.md` | The consistency claim corrected to what was measured; a *Why Debug holds its stamp to the day* section with the 4-of-4 → 0-of-4 table and a *What the hold costs*; two new rows in *Alternatives considered* — the hold itself, and the dismissed stamp-that-stays-still |
+| `README.md` | The `BuildTimestamp` and `Configuration` rows of *Configuration Reference*; *Timestamp Consistency* gains the hold, the measurement and the `BuildRelease` cost |
+| `Build.props` | The comment above `BuildTimestamp`, which described the old per-build capture, replaced with why there are two lines, why an empty `Configuration` counts as `Debug`, and what the hold costs |
+| `Build.ps1.template`, `Build.sh.template` | Decision 9: each says a stamp passed there **overrides** the hold, so a consumer running them in the inner loop knows to drop the line |
+
+**The claim that was wrong, and exactly how.** The document said that captured at evaluation "all
+projects normally land on the same value". Measured, 19 of 24 clock-stamped builds stamped their
+projects with **more than one value, up to three**. But the correction is narrower than it first
+looks and the document now says so: none of the 24 crossed a minute, so the *version* — precise only
+to `HHmm` — did agree throughout. It is `BuildRelease`, which carries the seconds, that mostly did
+not. Overstating this would have been as wrong as the original claim.
+
+⚠ **`assert-packages` reads every `.nupkg` in the directory it is given, so a stale one fails it
+misleadingly.** Run against `packages/Release`, it reported four relative links in "the README" —
+all four from a `2026.3.928` package left there in September, whose README genuinely did link
+relatively before `v2026.4.1031` fixed it. The cited line numbers do not match the current README,
+which is the tell. Pack into a fresh directory before believing a failure: `packages/` is gitignored,
+so whatever is in it survives everything else.
+
+**No drift from the plan.** Step 6's three verifications hold as written, including that `README.md`,
+`Directory.Build.props.template` and the `BNAV04` message still describe one setup — three properties
+required and three optional, unchanged, there being nothing new for a consumer to set.
 
 ## Open
 

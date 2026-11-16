@@ -12,6 +12,14 @@
       - BuildTimestamp: fixed once, instead of captured independently per project at evaluation
                         time (see docs/MultiProjectBuildTimestamps.md for why that distinction
                         matters on deep dependency chains).
+
+                        NOTE: a stamp passed here OVERRIDES the Debug hold. A Debug build that
+                        sets nothing takes the day (midnight), which is already exact across
+                        every project and lets an unchanged build compile nothing; this script
+                        gives it the current time instead, so each run recompiles the graph.
+                        That is the right trade for a build you are about to ship or inspect,
+                        and the wrong one for the inner loop — in which case drop this script's
+                        -p:BuildTimestamp line, or just run `dotnet build` directly.
       - CommitSha:      populated from git, mirroring what CI providers already supply via
                         GITHUB_SHA / CI_COMMIT_SHA / BITBUCKET_COMMIT.
       - PublicVersion:  populated from the nearest git tag, mirroring what a tag-triggered
