@@ -41,7 +41,7 @@ frozen. Drift from it is recorded here, never edited into it.
 | 2 · `MinimumValueOfHHmm` to `0` | **done** | Below |
 | 3 · The hold in `Build.props` | **done**; the suite is green, 72 of 72 | Below |
 | 4 · `BNAV05` and the validating condition | **done**; 89 of 89 | Below |
-| 5 · `VersionDerivationTests` | not started | |
+| 5 · `VersionDerivationTests` | **done**; 97 of 97, and proven red both ways | Below |
 | 6 · The documents | not started | |
 | 7 · The `AGENTS.md` invariants | not started | |
 | 8 · A release | the maintainer's, not started | |
@@ -195,6 +195,61 @@ for each bad stamp. It reports exactly one of the two, by the division above, wh
 not have anticipated: that the target pre-empts the compiler is only visible once both exist. The
 plan's other step-4 assertions — the ungated case, `-getProperty` answering empty, `DaysInMonth`
 pinned by the two Februaries — hold as written.
+
+### Step 5, as built
+
+`Tests/…/Incremental/VersionDerivationTests.cs`, the guard for the one invariant this repository had
+no automated check for: the CalVer derivation exists twice, in `BuildVersion` and in `Build.props`,
+and one `BuildTimestamp` goes into both. 8 new tests; the suite is 97 of 97.
+
+**Each row is asserted three ways, not two.** The MSBuild value against the C# value catches an
+ordinary one-sided change; both against a literal written down when the plan was approved catches a
+change made to *both halves at once*, which the first comparison cannot see by construction. The
+stamp is parsed in the test exactly as `AssemblyInfoGenerator` parses it — `yyyyMMddHHmmss`,
+`InvariantCulture`, `AssumeLocal` — since parsed any other way it would not be the comparison it
+claims to be.
+
+⭐ **Proven red both ways before being trusted**, which is what the plan asks of this step and the
+only evidence that a guard guards anything:
+
+| Perturbation, one half only | Result |
+|---|---|
+| `Build.props`' Q1 boundary from `<= 3` to `<= 2` | **1 failure**, "the last minute of Q1", on the C#-against-MSBuild assertion |
+| `GetQuarter` from `(Month + 2) / 3` to `(Month + 1) / 3` | **8 failures** — three rows here, plus the five `BuildVersionTests` culture rows |
+
+Both were reverted and the tree re-measured green. Note the asymmetry: the C# half already had
+independent cover, and the MSBuild half had **none** — one perturbation of `Build.props` would have
+shipped silently before this step, and that is the defect the step exists for.
+
+**The end-to-end case** builds the fixture with `20260913161300` and compares MSBuild's `AutoVersion`
+with the `AssemblyFileVersion` the generator wrote into `Leaf.dll` in that same build, read back with
+`FileVersionInfo` from the Win32 version resource the compiler synthesised — the four integer parts,
+not the `FileVersion` string, whose form belongs to the resource. Nothing in it is compared against a
+value a test author typed: each side computed its own from the one stamp.
+
+**`FixtureConsumer.EvaluateMany` is new**, and `Evaluate` now delegates to it. Starting `dotnet` is
+nearly all an evaluation costs, and `-getProperty` may be repeated — MSBuild answers them together
+under one `Properties` object — so a row wanting `AutoVersion` and `AutoPackageVersion` asks once.
+**Measured: 3m44s for the suite with two calls a row, 2m32s with one.** The property name is anchored
+to its opening quote in the pattern, so asking for `AutoVersion` never reads `AutoPackageVersion`,
+which ends with the same characters.
+
+⚠ **The suite's wall time is not stable and should not be quoted as one number.** The same green tree
+measured 2m32s and 5m57s on this machine within the hour, and the two perturbation runs took 4m49s
+and 7m24s. Every incremental test spawns real builds, so the figure tracks whatever else the machine
+is doing. What is stable is the *shape*: roughly 3 seconds of the suite is unit tests and the rest is
+MSBuild.
+
+**No drift from the plan.** Step 5's table, its three-way assertions, the end-to-end case and the
+red-both-ways requirement all hold as written.
+
+⛔ **Found while building step 5, and it belongs to steps 6 and 7: `Tests/AGENTS.md` is stale.** Its
+file table lists neither `Incremental/IncrementalBuildTests.cs`, `Incremental/StampValidationTests.cs`
+nor `Incremental/VersionDerivationTests.cs`, and its closing sentence — *"Nothing here runs
+`AssemblyInfoGenerator` through a generator driver or evaluates `Build.props` / `Build.targets`;
+those are exercised only by building a consuming project"* — has been wrong since step 1. Building a
+consuming project is now exactly what those three do. Steps 1 and 4 each left this behind; step 5 is
+naming it rather than making the same omission a third time.
 
 ## Open
 

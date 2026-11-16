@@ -112,7 +112,20 @@ internal sealed class FixtureConsumer : IDisposable
     /// Reads a property by evaluation alone — <c>dotnet msbuild -getProperty</c> runs no target, so
     /// this is what tooling sees, and what a check living only in a target would never reach.
     /// </summary>
-    internal string Evaluate(string property, params string[] extraArguments)
+    internal string Evaluate(string property, params string[] extraArguments) =>
+        EvaluateMany([property], extraArguments)[property];
+
+    /// <summary>
+    /// The same evaluation, answering several properties from one invocation of <c>dotnet</c>.
+    /// </summary>
+    /// <remarks>
+    /// Starting the process is nearly all an evaluation costs, and <c>-getProperty</c> may be
+    /// repeated: MSBuild then answers them together under one <c>Properties</c> object. A test
+    /// wanting two properties for one stamp should ask once rather than twice.
+    /// </remarks>
+    internal Dictionary<string, string> EvaluateMany(
+        IReadOnlyList<string> properties,
+        params string[] extraArguments)
     {
         var startInfo = new ProcessStartInfo("dotnet")
         {
@@ -124,7 +137,12 @@ internal sealed class FixtureConsumer : IDisposable
 
         startInfo.ArgumentList.Add("msbuild");
         startInfo.ArgumentList.Add(LeafProject);
-        startInfo.ArgumentList.Add("-getProperty:" + property);
+
+        foreach (var property in properties)
+        {
+            startInfo.ArgumentList.Add("-getProperty:" + property);
+        }
+
         startInfo.ArgumentList.Add("-nologo");
 
         foreach (var argument in extraArguments)
@@ -140,12 +158,21 @@ internal sealed class FixtureConsumer : IDisposable
         var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
         process.WaitForExit();
 
-        var match = Regex.Match(
-            output,
-            "\"" + Regex.Escape(property) + "\":\\s*\"(?<value>[^\"]*)\"",
-            RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant);
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        return match.Success ? match.Groups["value"].Value : output.Trim();
+        foreach (var property in properties)
+        {
+            // The name is anchored to its opening quote, so asking for AutoVersion never reads the
+            // value of AutoPackageVersion, which ends with the same characters.
+            var match = Regex.Match(
+                output,
+                "\"" + Regex.Escape(property) + "\":\\s*\"(?<value>[^\"]*)\"",
+                RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant);
+
+            values[property] = match.Success ? match.Groups["value"].Value : output.Trim();
+        }
+
+        return values;
     }
 
     /// <summary>
