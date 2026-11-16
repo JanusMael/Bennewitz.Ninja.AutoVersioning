@@ -40,7 +40,7 @@ frozen. Drift from it is recorded here, never edited into it.
 | 1 · `IncrementalBuildTests` and its fixture | **done**, red as the plan requires | Below |
 | 2 · `MinimumValueOfHHmm` to `0` | **done** | Below |
 | 3 · The hold in `Build.props` | **done**; the suite is green, 72 of 72 | Below |
-| 4 · `BNAV05` and the validating condition | not started | |
+| 4 · `BNAV05` and the validating condition | **done**; 89 of 89 | Below |
 | 5 · `VersionDerivationTests` | not started | |
 | 6 · The documents | not started | |
 | 7 · The `AGENTS.md` invariants | not started | |
@@ -139,6 +139,48 @@ place on the first green build it saw.
 The incremental tests spawn real builds, two per test, so the suite now runs about 90 seconds rather
 than 3. Node reuse is off and `MSBUILDDISABLENODEREUSE` is set, because a reused node can hold a
 stale evaluation of the very file under test.
+
+### Step 4, as built
+
+`BNAV05`, an Error, in `AssemblyInfoGenerator`, with its row in `AnalyzerReleases.Unshipped.md` and
+in the README's Diagnostics table. `Build.props` validates the stamp **in the derivation's own
+condition** — fourteen digits by regex, month 1 to 12, day no more than
+`$([System.DateTime]::DaysInMonth(year, month))`, hour, minute and second in range — so a stamp it
+cannot validate leaves `AutoVersion` and `AutoPackageVersion` **empty rather than wrong**. A target
+reports it. 17 new tests in `Incremental/StampValidationTests.cs`; the suite is 89 of 89.
+
+**Measured, after:** `20261345000000`, `20260230000000`, `20260229000000`, `20260431000000`,
+`20260105250000`, `20260105006000` and `2026010500050X` all derive nothing, where before they derived
+`2026.4.1345`, `2026.1.230` and so on. `20240229000000` derives `2024.1.229` and `20260229000000`
+derives nothing, which pins `DaysInMonth` against the hardcoded 31 someone will reach for;
+`20260131000000` derives `2026.1.131`. Every valid stamp in the step 5 table is unchanged.
+
+⛔ **The two halves divide the work; they do not both fire.** The reporting target runs before the
+compiler, so left ungated it failed the build first, every time, and `BNAV05` **could never be
+reached in a consumer build** — measured, eight malformed stamps, all reported by MSBuild, none by
+the generator. The target is therefore gated on `GenerateAutoVersionedAssemblyInfo != 'true'`:
+
+| | Reports | Why |
+|---|---|---|
+| Generator enabled | `BNAV05` only | Precise, documented, suppressible as a rule, and it names the offending value |
+| Generator disabled | the `Build.props` error only | No generator runs, so nothing else can report — and this is the project that packs `$(AutoPackageVersion)` |
+
+Both leave the two properties empty either way, and `dotnet msbuild -getProperty:AutoPackageVersion`
+answers empty rather than wrong in both, which is the assertion that the validation lives in the
+condition and not only in the target.
+
+⛔ **Neither message may name the other's id.** The target's error first read "…the generator reports
+the same thing as BNAV05 where it is enabled", which put the string `BNAV05` in the log of a build
+where no generator ran. The test asserting that the ungated case does *not* report `BNAV05` failed on
+it, and a consumer grepping the output would have been misled the same way. The target's error also
+carries **no `Code`**: `BNAV05` is the analyzer rule, tracked in `AnalyzerReleases` and suppressible
+as one, and an MSBuild error sharing the id would be neither.
+
+**Drift from the plan.** Step 4 says a fixture build "reports `BNAV05` and the `Build.props` error"
+for each bad stamp. It reports exactly one of the two, by the division above, which the step could
+not have anticipated: that the target pre-empts the compiler is only visible once both exist. The
+plan's other step-4 assertions — the ungated case, `-getProperty` answering empty, `DaysInMonth`
+pinned by the two Februaries — hold as written.
 
 ## Open
 

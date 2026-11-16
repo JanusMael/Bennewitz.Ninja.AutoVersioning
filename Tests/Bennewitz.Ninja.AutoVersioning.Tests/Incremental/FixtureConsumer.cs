@@ -109,6 +109,46 @@ internal sealed class FixtureConsumer : IDisposable
     internal string Build(params string[] extraArguments) => Run("build", Solution, extraArguments);
 
     /// <summary>
+    /// Reads a property by evaluation alone — <c>dotnet msbuild -getProperty</c> runs no target, so
+    /// this is what tooling sees, and what a check living only in a target would never reach.
+    /// </summary>
+    internal string Evaluate(string property, params string[] extraArguments)
+    {
+        var startInfo = new ProcessStartInfo("dotnet")
+        {
+            WorkingDirectory = Root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+
+        startInfo.ArgumentList.Add("msbuild");
+        startInfo.ArgumentList.Add(LeafProject);
+        startInfo.ArgumentList.Add("-getProperty:" + property);
+        startInfo.ArgumentList.Add("-nologo");
+
+        foreach (var argument in extraArguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        startInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("dotnet did not start.");
+
+        var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        var match = Regex.Match(
+            output,
+            "\"" + Regex.Escape(property) + "\":\\s*\"(?<value>[^\"]*)\"",
+            RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant);
+
+        return match.Success ? match.Groups["value"].Value : output.Trim();
+    }
+
+    /// <summary>
     /// The projects MSBuild compiled, and every project it reached a <c>CoreCompile</c> decision for.
     /// </summary>
     /// <remarks>

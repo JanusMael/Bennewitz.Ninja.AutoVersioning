@@ -84,7 +84,42 @@
     ⚠ The quarter is spelled out rather than calculated because MSBuild's Divide returns a
     DOUBLE: $([MSBuild]::Divide(11, 3)) is 3.6666666666666665, not 3.
   -->
-  <PropertyGroup Condition="'$(BuildTimestamp.Length)' == '14'">
+  <!--
+    Validate the stamp HERE, in the condition, not only in the reporting target below.
+
+    `dotnet msbuild -getProperty:AutoPackageVersion` is an EVALUATION: it runs no target, so a check
+    that lives only in a target leaves a wrong version readable by exactly the tooling that reads
+    versions that way. Measured before this existed, with Length == '14' as the only guard:
+    20261345000000 derived 2026.4.1345, 20260230000000 derived 2026.1.230 (30 February, which
+    BuildVersion.TryGetFromFile itself rejects), 20260105250000 derived 2026.1.105.2500, and
+    2026010500050X derived 2026.1.105.5 - the last because position 13 is never read. Fourteen
+    CHARACTERS is not fourteen digits.
+
+    An unvalidated stamp therefore leaves both properties EMPTY rather than wrong, and the target
+    further down says why. DaysInMonth is a static on System.DateTime, works in evaluation and
+    cannot throw for a month already range-checked, which is what lets 30 February be rejected
+    without hardcoding 31.
+  -->
+  <PropertyGroup>
+    <_AutoVersionStampIsFourteenDigits Condition="'$(BuildTimestamp)' != ''">$([System.Text.RegularExpressions.Regex]::IsMatch($(BuildTimestamp), '^[0-9]{14}$'))</_AutoVersionStampIsFourteenDigits>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_AutoVersionStampIsFourteenDigits)' == 'true'">
+    <_AutoVersionStampYear>$([System.Int32]::Parse($(BuildTimestamp.Substring(0, 4))))</_AutoVersionStampYear>
+    <_AutoVersionStampMonth>$([System.Int32]::Parse($(BuildTimestamp.Substring(4, 2))))</_AutoVersionStampMonth>
+    <_AutoVersionStampDay>$([System.Int32]::Parse($(BuildTimestamp.Substring(6, 2))))</_AutoVersionStampDay>
+    <_AutoVersionStampHour>$([System.Int32]::Parse($(BuildTimestamp.Substring(8, 2))))</_AutoVersionStampHour>
+    <_AutoVersionStampMinute>$([System.Int32]::Parse($(BuildTimestamp.Substring(10, 2))))</_AutoVersionStampMinute>
+    <_AutoVersionStampSecond>$([System.Int32]::Parse($(BuildTimestamp.Substring(12, 2))))</_AutoVersionStampSecond>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_AutoVersionStampIsFourteenDigits)' == 'true' And $(_AutoVersionStampMonth) &gt;= 1 And $(_AutoVersionStampMonth) &lt;= 12">
+    <!-- Safe now that the month is known to be 1 to 12: DaysInMonth would throw outside that. -->
+    <_AutoVersionStampDaysInMonth>$([System.DateTime]::DaysInMonth($(_AutoVersionStampYear), $(_AutoVersionStampMonth)))</_AutoVersionStampDaysInMonth>
+    <_AutoVersionStampIsValid Condition="$(_AutoVersionStampYear) &gt;= 1 And $(_AutoVersionStampDay) &gt;= 1 And $(_AutoVersionStampDay) &lt;= $(_AutoVersionStampDaysInMonth) And $(_AutoVersionStampHour) &lt;= 23 And $(_AutoVersionStampMinute) &lt;= 59 And $(_AutoVersionStampSecond) &lt;= 59">true</_AutoVersionStampIsValid>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_AutoVersionStampIsValid)' == 'true'">
     <_AutoVersionYear>$(BuildTimestamp.Substring(0, 4))</_AutoVersionYear>
     <_AutoVersionMonth>$([System.Int32]::Parse($(BuildTimestamp.Substring(4, 2))))</_AutoVersionMonth>
     <_AutoVersionDay>$([System.Int32]::Parse($(BuildTimestamp.Substring(6, 2))))</_AutoVersionDay>
@@ -125,6 +160,40 @@
     Prints a setup reminder in the build output until the generator is explicitly enabled.
     Fires once per project that references this package without opting in.
   -->
+  <!--
+    Reports what the validation above declined. BNAV05 is the compiler's half of this and covers a
+    project that enables the generator; this target is the only report for a project that uses
+    $(AutoPackageVersion) WITHOUT enabling it, which is the case this file is deliberately ungated
+    for, and it is that project which packs the version.
+  -->
+  <!--
+    ⚠ Gated on the generator being OFF, and that is not belt-and-braces being trimmed.
+
+    This target runs before the compiler. Left ungated it failed the build first, every time, so
+    BNAV05 could never be reached in a consumer build and the generator's half was dead code.
+    Measured: eight malformed stamps, all reported here, none reporting BNAV05.
+
+    So the two halves divide the work rather than racing. Generator enabled: the compiler reports
+    BNAV05, which is precise, documented and suppressible as a rule. Generator disabled: no
+    generator runs, nothing else can report, and this fires. Exactly one error either way, and the
+    derivation above leaves both properties empty in both cases.
+  -->
+  <Target Name="Bennewitz_Ninja_AutoVersioning_RefuseAMalformedBuildTimestamp"
+          BeforeTargets="PrepareForBuild;Pack"
+          Condition="'$(BuildTimestamp)' != '' And '$(_AutoVersionStampIsValid)' != 'true' And '$(GenerateAutoVersionedAssemblyInfo)' != 'true'">
+    <!--
+      Deliberately NOT Code="BNAV05". BNAV05 is the analyzer rule, tracked in AnalyzerReleases and
+      suppressible as one; an MSBuild error sharing the id would be neither, and a consumer could
+      not tell which half of this spoke. Keeping them distinct is also what makes the ungated case
+      testable: there, this fires and BNAV05 cannot.
+
+      ⛔ And this text must not NAME BNAV05 either. A cross-reference reads well but puts the id in
+      the log of a build where the generator never ran, so neither a test nor a consumer grepping
+      the output can tell the two halves apart. The README carries the relationship instead.
+    -->
+    <Error Text="BuildTimestamp is set to '$(BuildTimestamp)', which is not a yyyyMMddHHmmss timestamp. AutoVersion and AutoPackageVersion were left empty rather than derived from it, so anything taking its version from them would be wrong. Fix or remove it." />
+  </Target>
+
   <Target Name="Bennewitz_Ninja_AutoVersioning_GeneratorSetupReminder"
           AfterTargets="Build"
           Condition="'$(GenerateAutoVersionedAssemblyInfo)' != 'true'">

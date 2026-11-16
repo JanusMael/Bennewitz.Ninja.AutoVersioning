@@ -61,6 +61,17 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    private static readonly DiagnosticDescriptor BuildTimestampNotParsedDescriptor = new(
+        id: "BNAV05",
+        title: "BuildTimestamp is not a yyyyMMddHHmmss timestamp",
+        messageFormat: "BuildTimestamp is set to '{0}', which is not a yyyyMMddHHmmss timestamp. "
+                     + "Fix or remove it: left as it is, this assembly would be stamped from the clock instead, "
+                     + "while MSBuild derives AutoVersion and AutoPackageVersion from the same value, so a package "
+                     + "could carry a version that disagrees with the assembly inside it.",
+        category: "Configuration",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     private static bool ParseBuildTimestamp(string? value, out DateTimeOffset result) =>
         !string.IsNullOrEmpty(value) &&
         DateTimeOffset.TryParseExact(value, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out result);
@@ -101,7 +112,19 @@ public class AssemblyInfoGenerator : IIncrementalGenerator
 
             try
             {
-                var buildVersion = ParseBuildTimestamp(options.BuildTimestamp, out var capturedTimestamp)
+                var stampParsed = ParseBuildTimestamp(options.BuildTimestamp, out var capturedTimestamp);
+
+                // A stamp that was SET and does not parse is a configuration error, not a reason to
+                // fall back in silence: MSBuild derived AutoVersion from the same value in the same
+                // build. Absent is the ordinary case - Build.props always supplies one - so only a
+                // non-empty value is reported.
+                if (!stampParsed && !string.IsNullOrEmpty(options.BuildTimestamp))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        BuildTimestampNotParsedDescriptor, Location.None, options.BuildTimestamp));
+                }
+
+                var buildVersion = stampParsed
                     ? BuildVersion.Generate(capturedTimestamp)
                     : BuildVersion.Generate();
 

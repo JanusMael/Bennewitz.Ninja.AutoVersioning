@@ -174,6 +174,9 @@ The package auto-imports two files via NuGet: `Build.props`, which declares the 
 | `BNAV02` | Error | `AssemblyCompany` is not configured |
 | `BNAV03` | Error | `AssemblyProduct` is not configured |
 | `BNAV04` | Warning | Multi-line setup snippet emitted alongside BNAV00 — shows the required `Directory.Build.props` configuration |
+| `BNAV05` | Error | `BuildTimestamp` is set but is not a `yyyyMMddHHmmss` timestamp. Fix or remove it: the assembly would otherwise be stamped from the clock while MSBuild derives `AutoVersion` and `AutoPackageVersion` from the same bad value, so a package can carry a version that disagrees with the assembly inside it |
+
+`BNAV05` is the generator's half. `Build.props` refuses the same stamp independently, leaving `AutoVersion` and `AutoPackageVersion` empty rather than wrong and failing the build with an uncoded MSBuild error — because a project can use `$(AutoPackageVersion)` without enabling the generator, and that project is the one that packs the version. The two are kept apart, and neither message names the other, so the output says which half spoke.
 
 **Renamed after `2026.3.916`.** Up to and including that version the IDs were `BAUTOVERSIONING00`–`04`. The numbers are unchanged, so `BAUTOVERSIONING04` is now `BNAV04`: rename any suppression or filter that names an old ID, or it stops matching — a `NoWarn`, an `.editorconfig` severity entry or a `#pragma warning disable`. `TreatWarningsAsErrors` is unaffected, since it does not name IDs. The prefix is `BN` plus the product's initials, shared across the Bennewitz.Ninja packages, and it will not change again.
 
