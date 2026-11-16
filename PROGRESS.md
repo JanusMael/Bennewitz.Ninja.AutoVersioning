@@ -176,6 +176,20 @@ it, and a consumer grepping the output would have been misled the same way. The 
 carries **no `Code`**: `BNAV05` is the analyzer rule, tracked in `AnalyzerReleases` and suppressible
 as one, and an MSBuild error sharing the id would be neither.
 
+**What steps 5 to 7 should build on**, since it was written for step 4 and the plan predates it:
+
+- `FixtureConsumer.Evaluate(property, args)` runs `dotnet msbuild -getProperty` over the fixture's
+  `Leaf` project and returns the value — an evaluation, no target, no compile, so it is fast and is
+  the right tool for step 5's stamp table. `FixtureConsumer.Run(verb, target, args)` is the build
+  form, and `Build(args)` the solution shorthand.
+- The fixture's written `Directory.Build.props` reports `FIXTURE-CONFIGURATION`, `FIXTURE-STAMP`,
+  `FIXTURE-AUTOVERSION` and `FIXTURE-AUTOPACKAGEVERSION` from a target, read back with
+  `FixtureConsumer.ReadReportedValue(log, key)`, which throws rather than returning empty when the
+  report is missing.
+- Step 5's end-to-end case needs a built assembly's `AssemblyFileVersion`: the fixture's output sits
+  under `<copy>/src/<Project>/obj/<Configuration>/net10.0/<Project>.dll`, and
+  `BuildVersionFromFileTests` already shows the `FileVersionInfo` pattern.
+
 **Drift from the plan.** Step 4 says a fixture build "reports `BNAV05` and the `Build.props` error"
 for each bad stamp. It reports exactly one of the two, by the division above, which the step could
 not have anticipated: that the target pre-empts the compiler is only visible once both exist. The
