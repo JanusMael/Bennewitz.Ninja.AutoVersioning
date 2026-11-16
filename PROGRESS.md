@@ -38,8 +38,8 @@ frozen. Drift from it is recorded here, never edited into it.
 | Step | State | Notes |
 |---|---|---|
 | 1 · `IncrementalBuildTests` and its fixture | **done**, red as the plan requires | Below |
-| 2 · `MinimumValueOfHHmm` to `0` | not started | |
-| 3 · The hold in `Build.props` | not started | |
+| 2 · `MinimumValueOfHHmm` to `0` | **done** | Below |
+| 3 · The hold in `Build.props` | **done**; the suite is green, 72 of 72 | Below |
 | 4 · `BNAV05` and the validating condition | not started | |
 | 5 · `VersionDerivationTests` | not started | |
 | 6 · The documents | not started | |
@@ -96,6 +96,49 @@ builds Debug, so decision 2 covers it either way; nothing rests on the gap.
 
 **`--filter-class` is not an MTP argument.** It reports zero tests run with exit code 5, the same way
 `--nologo` does, so the suite runs whole.
+
+### Steps 2 and 3, as built
+
+**Step 2**, the floor. `Constants.MinimumValueOfHHmm` is `0`, not `100`, and its comment no longer
+claims `0100` is the minimum valid `HHmm`. The midnight hour runs `0` to `59`; what rejects a
+revision that is not a time is the hour and minute range check below it, `60` to `99` included, and
+what rejects the unstamped `1.0.0.0` is `MinimumValueOfMMdd`, untouched. `BuildVersionFromFileTests`
+gained four accepting rows, red first against the old constant — `…429.0` as 00:00, `…429.1` as
+00:01, `…429.59` as 00:59, and a three-part `2026.4.1116` as that day at midnight, which pins
+decision 7's accepted consequence — and two rejecting rows, `…429.60` and `…429.99`, which passed
+before and after and are there as regression guards.
+
+**Step 3**, the hold: the two lines `plans/00001` specifies, in place of the one that set
+`BuildTimestamp`. Debug and empty take `DateTime.Today`; everything else keeps `DateTime.Now`.
+
+**Measured on this machine, the suite green at 72 of 72** — the drafting session's figures
+reproduced independently, by a harness in the repository rather than by scratch scripts:
+
+| A Debug build after | Before step 3 | After |
+|---|---|---|
+| nothing changed, as a solution | 4 of 4 | **0 of 4** |
+| a body edit in `Core`, which the other three reference | 4 of 4 | **1 of 4** |
+| a body edit in `Leaf`, which nothing references | 4 of 4 | **1 of 4** |
+| nothing changed, one project with no `-c` | 3 of 3 | **0 of 3** |
+| an unchanged **Release** build | 4 of 4 | 4 of 4, deliberately |
+
+Confirmed in the generated editorconfig directly: all four projects carry
+`build_property.BuildTimestamp = 20261116000000`, one value, the day.
+
+⚠ **The ordinary skip line is not the one that reads like it.** MSBuild writes
+`Skipping target "CoreCompile" because all output files are up-to-date…` when a target is skipped,
+and `Target "CoreCompile" skipped. Previously built successfully.` only for a second request inside
+one build. Worse, **only a target that actually runs gets a `Target "CoreCompile" in file … from
+project "X"` header**, so a parser that takes the project from that header cannot attribute a skip at
+all. `ReadCompileDecisions` therefore tracks the project from any line naming one and matches both
+skip forms. The first version matched one form and took the project from the header: it read 1 of 4
+projects as having reached a decision, and the plan's guard — every project must reach a decision a
+test can read — failed the run instead of reporting that nothing compiled. That guard earned its
+place on the first green build it saw.
+
+The incremental tests spawn real builds, two per test, so the suite now runs about 90 seconds rather
+than 3. Node reuse is off and `MSBUILDDISABLENODEREUSE` is set, because a reused node can hold a
+stale evaluation of the very file under test.
 
 ## Open
 

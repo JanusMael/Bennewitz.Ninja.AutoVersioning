@@ -260,8 +260,12 @@ public sealed record BuildVersion
 
     private static class Constants
     {
-        //100 is the minimum VALID value for the UInt16 of `HHmm` is 0100
-        public const UInt16 MinimumValueOfHHmm = 100;
+        //0 is the minimum VALID value for the UInt16 of `HHmm`: midnight is 0000, and the whole
+        //midnight hour runs 0 to 59. This was 100 under a comment claiming 0100 was the minimum,
+        //which made every build made between 00:00 and 00:59 unreadable - TryGetFromFile returned
+        //false for one and the strict constructor threw. The hour and minute ranges below are what
+        //actually reject a revision that is not a time, 60 to 99 among them.
+        public const UInt16 MinimumValueOfHHmm = 0;
         //101 is the minimum VALID value for the UInt16 of `MMdd` is 0101 (January 1st)
         public const UInt16 MinimumValueOfMMdd = 101;
     }

@@ -38,6 +38,7 @@
     usable from the project body.
   -->
   <PropertyGroup>
+    <BuildTimestamp Condition="'$(BuildTimestamp)' == '' and ('$(Configuration)' == '' or '$(Configuration)' == 'Debug')">$([System.DateTime]::Today.ToString('yyyyMMddHHmmss'))</BuildTimestamp>
     <BuildTimestamp Condition="'$(BuildTimestamp)' == ''">$([System.DateTime]::Now.ToString('yyyyMMddHHmmss'))</BuildTimestamp>
   </PropertyGroup>
 

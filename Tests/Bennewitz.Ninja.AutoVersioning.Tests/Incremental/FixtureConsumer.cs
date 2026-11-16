@@ -112,19 +112,31 @@ internal sealed class FixtureConsumer : IDisposable
     /// The projects MSBuild compiled, and every project it reached a <c>CoreCompile</c> decision for.
     /// </summary>
     /// <remarks>
-    /// Two line shapes carry the decision, neither of which names its project:
-    /// <c>Building target "CoreCompile" completely.</c> and
-    /// <c>Target "CoreCompile" skipped. Previously built successfully.</c> The project comes from the
-    /// header above them, so the log is read in order. A project can be asked twice in one build,
-    /// once per request, which is why this answers in sets rather than counts: what matters is
-    /// whether a project compiled at all.
+    /// <para>
+    /// Three line shapes carry a decision and <b>none of them names its project</b>, so the log is
+    /// read in order and each decision belongs to the project named most recently:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><c>Building target "CoreCompile" completely.</c> — it ran</item>
+    /// <item><c>Skipping target "CoreCompile" because all output files are up-to-date…</c> — the
+    /// ordinary skip, and the one that matters here</item>
+    /// <item><c>Target "CoreCompile" skipped. Previously built successfully.</c> — a second request
+    /// for a project already built in this same build</item>
+    /// </list>
+    /// <para>
+    /// Only the first of those is preceded by a <c>Target "CoreCompile" in file … from project "X"</c>
+    /// header, because MSBuild writes that header only when a target actually runs. So the project is
+    /// tracked from <i>any</i> line naming one, which at detailed verbosity is almost every line.
+    /// A project can be asked twice in one build, which is why this answers in sets rather than
+    /// counts: what matters is whether a project compiled at all.
+    /// </para>
     /// </remarks>
     internal static (HashSet<string> Compiled, HashSet<string> Decided) ReadCompileDecisions(string log)
     {
         // No closing quote in the pattern: [^"]+ already stops at one, and a trailing quote would
         // collide with the raw string's own delimiter.
-        var header = new Regex(
-            """Target "CoreCompile" in file ".*" from project "(?<project>[^"]+)""",
+        var projectNamed = new Regex(
+            """project "(?<project>[^"]+\.csproj)""",
             RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant);
 
         var compiled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -133,11 +145,10 @@ internal sealed class FixtureConsumer : IDisposable
 
         foreach (var line in log.Split('\n'))
         {
-            var match = header.Match(line);
+            var match = projectNamed.Match(line);
             if (match.Success)
             {
                 current = Path.GetFileName(match.Groups["project"].Value);
-                continue;
             }
 
             if (current is null)
@@ -150,7 +161,8 @@ internal sealed class FixtureConsumer : IDisposable
                 compiled.Add(current);
                 decided.Add(current);
             }
-            else if (line.Contains("Target \"CoreCompile\" skipped", StringComparison.Ordinal))
+            else if (line.Contains("Skipping target \"CoreCompile\" because", StringComparison.Ordinal)
+                  || line.Contains("Target \"CoreCompile\" skipped", StringComparison.Ordinal))
             {
                 decided.Add(current);
             }
