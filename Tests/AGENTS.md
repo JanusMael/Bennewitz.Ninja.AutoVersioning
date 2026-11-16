@@ -27,7 +27,8 @@ consumer's would.
 
 | Rule | Why |
 |---|---|
-| `dotnet test` is never passed `--nologo`, nor `--filter-class` | Neither is a Microsoft.Testing.Platform argument. Each reports **zero tests run with exit code 5**, which reads as a suite that found nothing rather than as a rejected argument. There is no narrowing flag to reach for: run the suite whole |
+| `dotnet test` is never passed `--nologo`, nor `--filter-class` | Neither is a Microsoft.Testing.Platform argument. Each reports **zero tests run with exit code 5**, which reads as a suite that found nothing rather than as a rejected argument |
+| To narrow a run, the argument is **`--filter`**, which MTP does support | `dotnet test … --filter "FullyQualifiedName~VersionDerivationTests"` runs those 8 in 53 s; `~BuildVersionTests` runs 15 in 0.5 s. Measured 2026-11-16. Use it in the inner loop — but **CI and any "the suite is green" claim run it whole**, because a filtered pass says nothing about the rest |
 | This directory stays in `DefaultItemExcludes` in the root csproj | The root project's glob would otherwise compile these sources into the netstandard2.0 analyzer |
 | `Microsoft.CodeAnalysis.CSharp` is referenced here directly | The generator references it with `PrivateAssets="all"`, so it does not flow |
 | A test that sets `Thread.CurrentThread.CurrentCulture` restores it in `finally`, in a `[DoNotParallelize]` class like `BuildVersionTests` | A culture left set leaks into whichever test that thread runs next |

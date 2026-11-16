@@ -301,7 +301,15 @@ costs more than a stale comment: this plan's own steps are the evidence.
 
 **The `--filter-class` trap is now a rule there**, beside `--nologo`: neither is an MTP argument, both
 report zero tests run with exit code 5, and that reads as a suite that found nothing rather than as a
-rejected argument. There is no narrowing flag; the suite runs whole.
+rejected argument.
+
+⭐ **Correction, measured 2026-11-16: `--filter` *is* supported, and the belief recorded in step 1 —
+"so the suite runs whole" — was wrong.** `dotnet test … --filter "FullyQualifiedName~VersionDerivationTests"`
+runs those 8 in 53 seconds, and `~BuildVersionTests` runs 15 in half a second, where the whole suite
+takes minutes. One failing argument (`--filter-class`) was generalised into "there is no narrowing
+flag", and that generalisation cost every run since step 1 the full suite. `Tests/AGENTS.md` now
+carries both halves: `--filter` for the inner loop, the whole suite for CI and for any claim that it
+is green.
 
 **Four `nothing automated` rows remain in the root `AGENTS.md`, and eleven across the other
 directories.** They are left as they are deliberately — the step asks that the table "name a real
