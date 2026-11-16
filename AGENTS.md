@@ -42,6 +42,7 @@ layout is flat: one top-level directory per group of generator source.
 | `Tests/` | `Bennewitz.Ninja.AutoVersioning.Tests`, MSTest on Microsoft.Testing.Platform |
 | `scripts/` | `repo-conventions.cs`, a copy of the family's conventions check |
 | `docs/` | `MultiProjectBuildTimestamps.md`, packed into the package |
+| `plans/` | Numbered plans, `NNNNN-slug.md`. A draft is edited in place; an approved one is committed on its own and never edited again, drift going to `PROGRESS.md`. Not packed |
 | `.github/` | CI, the release workflow, and `repository.json` |
 
 ## Invariants
