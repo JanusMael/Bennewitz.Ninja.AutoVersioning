@@ -78,12 +78,25 @@ binary. They cannot. `Package.nuspec` ships the assembly to `analyzers\dotnet\cs
 enters the consumer's reference set. There is no `lib/`. Confirmed by search: nothing outside this
 repo calls `TryGetFromFile` or references `Bennewitz.Ninja.AutoVersioning.SourceGenerators`.
 
+**Decided 2026-11-16, by the maintainer: a separate `.Abstractions` package**, the first row below.
+It wants a plan of its own and has none yet; `plans/00001` scopes it out deliberately, fixing only
+what `TryGetFromFile` computes, not what reaches a consumer.
+
+⛔ **One correction to carry into that plan.** The preference list below used to say the
+`.Abstractions` option needs "its own nuget.org trusted-publishing policy". It does not, and acting
+on that would break the release: nuget.org mints **one API key per token exchange, scoped to one
+matching policy**, so two policies matching this owner, repository and workflow would publish the
+first id permanently and reject the rest `403` in the same `dotnet nuget push`. A second id needs
+the **existing** policy's Glob Patterns widened to cover it — the field is plural for this reason —
+plus a row in `packages.push`, which `scripts/assert-packages.cs` then requires and
+`scripts/release-target.cs` resolves.
+
 The correctness fix landed without closing this deliberately. Three ways to close it, in preference
 order:
 
 | Option | Trade-off |
 |---|---|
-| A separate `.Abstractions` package with a real `lib/netstandard2.0` | Cleanest. Keeps the analyzer a pure `developmentDependency` and ships no Roslyn. Most work |
+| **A separate `.Abstractions` package with a real `lib/netstandard2.0` — chosen** | Cleanest. Keeps the analyzer a pure `developmentDependency` and ships no Roslyn. Most work. Needs the one policy's glob widened and a `packages.push` row, not a policy of its own |
 | Add `lib\netstandard2.0` to this package | One nuspec line, but publishes the whole generator assembly as a runtime reference, exposing Roslyn-dependent types that fail at runtime because `SuppressDependenciesWhenPacking` strips the dependency |
 | Document a `HintPath` straight at the analyzer DLL | No packaging change, but the path carries the version number and it is not a supported reference model |
 
