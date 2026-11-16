@@ -353,6 +353,32 @@ checklist is where someone cutting a release actually looks, which is the whole 
 | The one-release-per-day rule in the checklist | **Add it** |
 | `.Abstractions` | **Write the plan now** — `plans/00002`, draft |
 | The 15 `nothing automated` invariant rows | **Leave them, revisit per change.** They are honestly labelled, and several guard what no test here reaches — a consumer's compiler, the packed assembly's load surface. A guard is added when a change touches that area, not as a campaign |
+| The tag | **`v2026.4.1116`, today, by the maintainer.** The staged heading already matches |
+| `.Abstractions`' public surface | **Trim the unused three before the first release** — `plans/00002` decision 8 |
+| The stale worktree | **Removed**, with its branch |
+
+### Two findings from checking those decisions rather than assuming them
+
+⛔ **`Architecture/AssemblyQualityTests.cs` is a trap for `plans/00002`.** It reads
+`private static readonly Assembly Shipped = typeof(BuildVersion).Assembly;`. Today `BuildVersion`
+lives in the generator, so that is the generator. **Move `Versioning/` into `.Abstractions` and the
+whole class silently retargets to the new assembly — and no test fails.** The generator, which is
+the thing a consumer's compiler loads and the only reason those rules exist here, would stop being
+tested while the suite stayed green. `plans/00002` decision 9 carries the fix.
+
+📏 **Three public members of `Versioning/` are used nowhere**, measured 2026-11-16:
+`BuildVersion.Generate(UInt16, UInt16)` has no caller in the repository at all;
+`FuzzyBuildVersionComparer` appears only in one comment in `Hashing/HashCodeUtility.cs`; and
+`GetQuarter` is called once, from `BuildVersion.cs` itself. The nested `Constants`, `Formats` and
+`VersionBuildInfo` are already `private`. `GetQuarter` is the one that matters most: a public
+extension method on `DateTimeOffset` would appear on **every `DateTimeOffset` in every consuming
+project** the moment the package ships.
+
+**The `.claude/worktrees/distracted-tharp-4a7182` worktree is gone**, with its branch — 69 MB, last
+commit `3688ce9` of 2026-09-22, and **nothing on it that was not already on `main`**. It held a full
+stale copy of the source, an older `AssemblyInfoGenerator.cs` among it, and a search run without
+pruning it returned those copies looking exactly like real matches. `worktrees` belongs in the prune
+list of any search run here.
 
 ## Open
 
