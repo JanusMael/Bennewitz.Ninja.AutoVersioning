@@ -23,7 +23,7 @@ layout is flat: one top-level directory per group of generator source.
 | Path | What it holds |
 |---|---|
 | `Bennewitz.Ninja.AutoVersioning.csproj` | The generator project: netstandard2.0, `IsRoslynComponent`, assembly `Bennewitz.Ninja.AutoVersioning.SourceGenerators`, packed through `Package.nuspec` |
-| `AssemblyInfoGenerator.cs` | The `IIncrementalGenerator`: reads `build_property.*`, reports `BNAV00`–`04`, adds `AutoVersionedAssemblyInfo.g.cs` and `DirectoryBuildInfo.g.cs` |
+| `AssemblyInfoGenerator.cs` | The `IIncrementalGenerator`: reads `build_property.*`, reports `BNAV00`–`05`, adds `AutoVersionedAssemblyInfo.g.cs` and `DirectoryBuildInfo.g.cs` |
 | `Build.props` | Shipped to consumers as `Bennewitz.Ninja.AutoVersioning.props`: the `CompilerVisibleProperty` items, `BuildTimestamp`, `AutoVersion` / `AutoPackageVersion`, and the setup-reminder target. Not imported by this repository's own build |
 | `Build.targets` | Shipped as `Bennewitz.Ninja.AutoVersioning.targets`: turns off the SDK attributes the generator emits |
 | `Package.nuspec` | What the package contains, file by file |
@@ -87,8 +87,14 @@ dotnet run --file scripts/repo-conventions.cs -- check
 
 ## Checklists
 
-**Releasing:** CI green on the commit to release. Move the rows of `AnalyzerReleases.Unshipped.md`
-into `AnalyzerReleases.Shipped.md` under `## Release <version>`. Tag `vYYYY.Q.MMDD` and push;
+**Releasing:** CI green on the commit to release. **One release per calendar day**, and the version
+is the date: a package version is the three-part `YYYY.Q.MMDD`, so a same-day second release has
+nowhere to go. A four-part tag is not the answer — that segment already means `HHmm` in
+`AutoVersion`, so `2026.4.1116.1` reads as that day at 00:01. Decided family-wide through
+Bennewitz.Ninja.Templates. Move the rows of `AnalyzerReleases.Unshipped.md` into
+`AnalyzerReleases.Shipped.md` under `## Release <version>`. ⚠ **That heading is the tag's date, so
+moving the rows commits you to tagging that day** — tag later and the heading must be corrected with
+it. Tag `vYYYY.Q.MMDD` and push;
 `release.yml` resolves the tag through `scripts/release-target.cs`, which refuses any other shape or
 a quarter that is not the date's, and pushes exactly the ids in `packages.push`. A dispatch with
 `version` blank is a dry run: it logs in and lists those ids. A version on nuget.org can never be

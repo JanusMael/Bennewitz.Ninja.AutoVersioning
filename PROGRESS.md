@@ -44,7 +44,7 @@ frozen. Drift from it is recorded here, never edited into it.
 | 5 · `VersionDerivationTests` | **done**; 97 of 97, and proven red both ways | Below |
 | 6 · The documents | **done**; `check` and `assert-packages` both pass | Below |
 | 7 · The `AGENTS.md` invariants | **done**; `check` conforms | Below |
-| 8 · A release | the maintainer's, not started | |
+| 8 · A release | the maintainer's; **prepared but not tagged** | Below |
 
 ### Step 1, as built
 
@@ -321,6 +321,39 @@ setup. Each is a candidate for a plan of its own, none for a silent edit here.
 **No drift from the plan.** Step 7's verification — `check` conforms, and the invariant table names a
 real guard for every row it can — holds as written.
 
+### Step 8, prepared — the tag is the maintainer's
+
+Decided 2026-11-16: prepare everything but the tag.
+
+- **`BNAV05` moved** from `AnalyzerReleases.Unshipped.md` into `AnalyzerReleases.Shipped.md` under
+  `## Release 2026.4.1116`. `Unshipped.md` now holds only its header, which is the state
+  `RS2000`/`RS2001` expect between releases.
+- **The notes are drafted** at
+  `C:\Users\Janus\AppData\Local\Temp\claude\04a262fe8f2a3d00\e3e7baad-04fd-43a1-b6b8-4186c82cb638\scratchpad\release-notes-2026.4.1116.md`
+  — deliberately not committed, there being no convention here for storing them; say the word and
+  they move into the repository. They lead with `BNAV05` as a breaking change and carry decision 7's
+  two reading-back consequences, as `plans/00001` requires.
+
+⛔ **The `## Release 2026.4.1116` heading is the tag's date, so this commit commits to tagging on
+2026-11-16.** Tag on another day and both the heading and the tag must change together — the version
+*is* the date, and `scripts/release-target.cs` refuses a quarter that is not its date's. The
+Releasing checklist in `AGENTS.md` now says so, beside the one-release-per-day rule.
+
+**The one-release-per-day rule is now in the Releasing checklist**, on the maintainer's word of
+2026-11-16. It had been recorded here but deliberately withheld from `AGENTS.md`, having arrived as
+another session's relay rather than from the maintainer; that reservation is now resolved. The
+checklist is where someone cutting a release actually looks, which is the whole point of moving it.
+
+### Decisions taken 2026-11-16, after steps 5 to 7
+
+| Question | Decision |
+|---|---|
+| Route for the six commits | **Straight to `main`**, matching steps 1 to 3 of this plan and this file's own statement that commits land directly. Pushed `3377252..1c814a9`; CI green, run `43954588140` |
+| How much of step 8 | **Everything but the tag**, as above |
+| The one-release-per-day rule in the checklist | **Add it** |
+| `.Abstractions` | **Write the plan now** — `plans/00002`, draft |
+| The 15 `nothing automated` invariant rows | **Leave them, revisit per change.** They are honestly labelled, and several guard what no test here reaches — a consumer's compiler, the packed assembly's load surface. A guard is added when a change touches that area, not as a campaign |
+
 ## Open
 
 ### Consumer reports `BAUTOVERSIONING` "not configured" errors, seen only in CI
@@ -370,8 +403,15 @@ enters the consumer's reference set. There is no `lib/`. Confirmed by search: no
 repo calls `TryGetFromFile` or references `Bennewitz.Ninja.AutoVersioning.SourceGenerators`.
 
 **Decided 2026-11-16, by the maintainer: a separate `.Abstractions` package**, the first row below.
-It wants a plan of its own and has none yet; `plans/00001` scopes it out deliberately, fixing only
-what `TryGetFromFile` computes, not what reaches a consumer.
+`plans/00001` scopes it out deliberately, fixing only what `TryGetFromFile` computes, not what
+reaches a consumer.
+
+📋 **[`plans/00002`](plans/00002-tryget-from-file-reaches-a-consumer.md) is the plan, written
+2026-11-16 and `draft, awaiting approval`** — so it is still edited in place, and nothing in it is
+implemented. It carries four questions under *To settle before approval* that want answers with
+evidence first: whether `BuildVersion` should have anything made `internal` before its public surface
+becomes a supported API, whether AssemblyQuality's rules apply to a second shipped assembly, whether
+`Pack.ps1` packs both ids, and whether the new id needs a README of its own.
 
 ⛔ **One correction to carry into that plan.** The preference list below used to say the
 `.Abstractions` option needs "its own nuget.org trusted-publishing policy". It does not, and acting
@@ -393,7 +433,7 @@ order:
 
 ## Constraints worth keeping
 
-- **The diagnostic ids are `BNAV00`–`04`, and the prefix does not change again.** The family scheme
+- **The diagnostic ids are `BNAV00`–`05`, and the prefix does not change again.** The family scheme
   is `BN` + the product's initials with the rule number kept — `BNAQ`, `BNXQ`, `BNCQ` — four letters
   because an analyzer's id shares one flat namespace with every analyzer a project loads, where a
   two-letter prefix collides and a seventeen-letter one helps nobody. The scheme and its reasoning

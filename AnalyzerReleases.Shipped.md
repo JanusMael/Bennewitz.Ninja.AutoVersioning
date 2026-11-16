@@ -41,3 +41,11 @@ BAUTOVERSIONING01 | SourceGenerator | Warning | Renamed to BNAV01
 BAUTOVERSIONING02 | Configuration | Error | Renamed to BNAV02
 BAUTOVERSIONING03 | Configuration | Error | Renamed to BNAV03
 BAUTOVERSIONING04 | Configuration | Warning | Renamed to BNAV04
+
+## Release 2026.4.1116
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+BNAV05 | Configuration | Error | BuildTimestamp is set but is not a yyyyMMddHHmmss timestamp
