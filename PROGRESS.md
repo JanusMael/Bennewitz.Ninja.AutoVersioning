@@ -43,7 +43,7 @@ frozen. Drift from it is recorded here, never edited into it.
 | 4 · `BNAV05` and the validating condition | **done**; 89 of 89 | Below |
 | 5 · `VersionDerivationTests` | **done**; 97 of 97, and proven red both ways | Below |
 | 6 · The documents | **done**; `check` and `assert-packages` both pass | Below |
-| 7 · The `AGENTS.md` invariants | not started | |
+| 7 · The `AGENTS.md` invariants | **done**; `check` conforms | Below |
 | 8 · A release | the maintainer's, not started | |
 
 ### Step 1, as built
@@ -280,6 +280,38 @@ so whatever is in it survives everything else.
 **No drift from the plan.** Step 6's three verifications hold as written, including that `README.md`,
 `Directory.Build.props.template` and the `BNAV04` message still describe one setup — three properties
 required and three optional, unchanged, there being nothing new for a consumer to set.
+
+### Step 7, as built
+
+The invariants, in four `AGENTS.md` files. `check` conforms.
+
+| File | What changed |
+|---|---|
+| `AGENTS.md` | Two new invariant rows — the Debug hold, guarded by `IncrementalBuildTests`; and *a stamp that is set and does not parse is reported, never replaced in silence*, guarded by `StampValidationTests`. **The two-derivations row's guard stops being "nothing automated" and becomes `VersionDerivationTests`**, which is what `plans/00001` decision 11 exists for. The ungated-`Build.props` row now names the test that covers its case |
+| `Versioning/AGENTS.md` | The same guard on its own copy of the two-derivations rule; a new row for `MinimumValueOfHHmm` being `0`; and a *What reading a stamp back now answers* section carrying decision 7's two consequences |
+| `Tests/AGENTS.md` | The four `Incremental/` files, which it had never listed, and the correction below |
+| — | `PROGRESS.md`, this section |
+
+⛔ **`Tests/AGENTS.md` had been wrong since step 1, and steps 1 and 4 both missed it.** Its closing
+sentence read *"Nothing here runs `AssemblyInfoGenerator` through a generator driver or evaluates
+`Build.props` / `Build.targets`; those are exercised only by building a consuming project"* — while
+three new test classes were doing exactly that. The file table listed none of them either. A
+directory's `AGENTS.md` is what the next session reads before touching that directory, so a stale one
+costs more than a stale comment: this plan's own steps are the evidence.
+
+**The `--filter-class` trap is now a rule there**, beside `--nologo`: neither is an MTP argument, both
+report zero tests run with exit code 5, and that reads as a suite that found nothing rather than as a
+rejected argument. There is no narrowing flag; the suite runs whole.
+
+**Four `nothing automated` rows remain in the root `AGENTS.md`, and eleven across the other
+directories.** They are left as they are deliberately — the step asks that the table "name a real
+guard for every row it can", and these guard things no test in this repository reaches: the packed
+assembly's dependency surface, the `GenerateAssembly*Attribute` suppression set, the
+`CompilerVisibleProperty`-to-`build_property` correspondence, and that three documents describe one
+setup. Each is a candidate for a plan of its own, none for a silent edit here.
+
+**No drift from the plan.** Step 7's verification — `check` conforms, and the invariant table names a
+real guard for every row it can — holds as written.
 
 ## Open
 
