@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Core/Core.csproj" />
+  <Project Path="src/Model/Model.csproj" />
+  <Project Path="src/App/App.csproj" />
+  <Project Path="src/Leaf/Leaf.csproj" />
+</Solution>

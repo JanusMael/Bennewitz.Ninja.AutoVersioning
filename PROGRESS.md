@@ -30,6 +30,73 @@ as a build at 00:01. Decided family-wide through Bennewitz.Ninja.Templates, rela
 AssemblyQuality session after it hit the question on a same-day crash fix. `AutoPackageVersion`
 already computes the three-part form, so nothing here changed.
 
+## `plans/00001` — a Debug build holds its stamp to the day
+
+[`plans/00001`](plans/00001-a-debug-build-holds-its-stamp-to-the-day.md), approved 2026-11-16 and
+frozen. Drift from it is recorded here, never edited into it.
+
+| Step | State | Notes |
+|---|---|---|
+| 1 · `IncrementalBuildTests` and its fixture | **done**, red as the plan requires | Below |
+| 2 · `MinimumValueOfHHmm` to `0` | not started | |
+| 3 · The hold in `Build.props` | not started | |
+| 4 · `BNAV05` and the validating condition | not started | |
+| 5 · `VersionDerivationTests` | not started | |
+| 6 · The documents | not started | |
+| 7 · The `AGENTS.md` invariants | not started | |
+| 8 · A release | the maintainer's, not started | |
+
+### Step 1, as built
+
+`Tests/fixtures/incremental` is the four-project consumer the plan measured, `Core` ← `Model` ←
+`App` with `Leaf` referencing `Model` and `Core`. `Tests/…/Incremental/FixtureConsumer.cs` copies it
+to the platform's temp location, renames the templates, writes the two files NuGet would import, and
+reads each project's `CoreCompile` decision out of a detailed log;
+`Tests/…/Incremental/IncrementalBuildTests.cs` holds the assertions. 66 tests now, 62 green and the
+four the plan says must be red until step 3.
+
+**Red, measured 2026-11-16 against today's `Build.props`**, which is the defect the plan exists for:
+
+| A Debug build after | Compiled |
+|---|---|
+| nothing changed, as a solution | `App`, `Core`, `Leaf`, `Model` — 4 of 4 |
+| a body edit in `Core`, which the other three reference | 4 of 4 |
+| a body edit in `Leaf`, which nothing references | 4 of 4 |
+| nothing changed, one project with no `-c` | `Core`, `Leaf`, `Model` — 3 of 3 |
+
+**`Configuration` as the package props see it** is now asserted rather than probed, five rows, and it
+is what decision 2 rests on. The distinction is the solution, not the verb:
+
+| Command, no `-c` | `Configuration` at that point |
+|---|---|
+| `dotnet build` of one project | **empty** |
+| `dotnet build` of a solution | `Debug` |
+| `dotnet pack`, either | `Release` |
+| `dotnet publish` of one project | `Release` |
+
+⚠ **Reading `Configuration` from the project body instead reports `Debug` for every one of those.**
+It is the SDK's default, already applied, and a probe placed there measures nothing about this
+decision. One was written that way during the plan's step-back and appeared to refute decision 2.
+
+**Two choices worth keeping:**
+
+- **The fixture's project files carry a `.template` suffix**, renamed on copy. As `.csproj` they are
+  found by `scripts/repo-conventions.cs`, which would hold them to the family's build properties:
+  measured, `check` reports "2 projects evaluated" with the suffix and would have had six without it.
+  The repository already uses the suffix for files MSBuild must not pick up.
+- **No `Directory.Build.props` or `Directory.Build.targets` is committed in the fixture**; the test
+  writes both into the copy, because they need the absolute path of this repository's `Build.props`,
+  `Build.targets` and the generator assembly the test run built.
+
+**Drift from the plan, one item.** Step 1 says the test records what `Configuration` reaches the
+package props for `dotnet test` as well. It does not: `dotnet test` over a fixture with no test
+project exits 1 before reporting, and giving the fixture a test project of its own would pull MSTest
+and a restore into it for one data point. The four commands that can be measured are. `dotnet test`
+builds Debug, so decision 2 covers it either way; nothing rests on the gap.
+
+**`--filter-class` is not an MTP argument.** It reports zero tests run with exit code 5, the same way
+`--nologo` does, so the suite runs whole.
+
 ## Open
 
 ### Consumer reports `BAUTOVERSIONING` "not configured" errors, seen only in CI
