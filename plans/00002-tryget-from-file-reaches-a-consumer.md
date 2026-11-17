@@ -54,35 +54,48 @@ cover both ids. `PROGRESS.md` records this correction against an earlier, wrong 
 - **`Pack.ps1` packs one project only.** It takes `$CsprojPath = Bennewitz.Ninja.AutoVersioning.csproj` and packs
   Debug and Release from it. It needs the second project added explicitly; there is no glob to inherit.
 
-### Still to settle before approval
+### Settled by the maintainer, 2026-11-17
 
-**1. The namespace — and it is permanent.** ⛔ `Versioning/BuildVersion.cs` declares
-`namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;`. Ship it unchanged and **a consumer writes
-`using Bennewitz.Ninja.AutoVersioning.SourceGenerators;` in a test project in order to read a version number** —
-from a package called `.Abstractions`, naming a thing that is not a source generator and that they are not using as
-one. A namespace cannot be changed after publication without breaking every consumer, so this is decided once.
-Three ways, none free:
+**11. The namespace is `Bennewitz.Ninja.AutoVersioning`.** ⛔ All three files of `Versioning/` declare
+`namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;` today. Shipped unchanged, **a consumer would write
+`using Bennewitz.Ninja.AutoVersioning.SourceGenerators;` in order to read a version number** — out of a package
+called `.Abstractions`, naming a thing that is not a source generator and that they are not using as one. A
+namespace cannot be changed after publication without breaking every consumer, so this was decided once, before
+publication. `Bennewitz.Ninja.AutoVersioning` matches the package family the consumer installed;
+`…AutoVersioning.Versioning` was weighed and rejected as a segment implying a sub-area that holds three types.
 
-| Option | Cost |
-|---|---|
-| Leave it | Permanently wrong-looking; zero work now |
-| `Bennewitz.Ninja.AutoVersioning` for the moved types | Honest. Touches `AssemblyInfoGenerator.cs`, the tests and the `AGENTS.md` files; mechanical, and best done in step 1's commit beside the trim |
-| `Bennewitz.Ninja.AutoVersioning.Versioning` | Matches the folder; another segment to type |
+The change is mechanical and **belongs in step 1's commit, beside the API trim, so that step 2's move stays a pure
+move**: the three files in `Versioning/`, `AssemblyInfoGenerator.cs`, the call sites in `BuildVersionTests`,
+`BuildVersionFromFileTests` and `Architecture/AssemblyQualityTests.cs`, and the `AGENTS.md` files that name the
+namespace.
 
-This is a decision the maintainer makes, not one this plan should take by default — which is exactly the argument
-that produced decision 8.
+**12. `.Abstractions` gets its own README.** The two packages have different audiences — one installs an analyzer,
+the other calls a method — and a shared README would open the library's nuget.org page with
+`CompilerVisibleProperty`, `Directory.Build.props` and the `BNAV` diagnostics, none of which its reader uses. The
+cost accepted is a second document to keep in step with the first.
 
-**2. Does the new package get its own README, or a section in the existing one?** `scripts/assert-packages.cs`
-requires the packed README of **every** id in `packages.push` to link only absolutely, so whichever is chosen is
-a file that must satisfy that check. A shared README describes an analyzer to someone who installed a library;
-a second one is another document to keep in step with the first.
+Two constraints on it, both verified in `scripts/assert-packages.cs` rather than assumed:
+
+- ⛔ **Its links must be absolute.** The packed README of every id in `packages.push` is checked, and a relative
+  link resolves against nuget.org and goes nowhere.
+- ⛔ **A package carrying *no* README passes every gate silently.** The check is guarded by
+  `r.Readme is not null`, so omitting `<readme>` from the nuspec yields a bare nuget.org page and a green run.
+  The new nuspec must name its README, and step 3 must confirm the packed file is there.
+
+A *shared* README was not available as a middle path: that mechanism requires a declared family in
+`.github/repository.json`, which would also change the release tag shape to `<family>/v…`.
 
 ## Scope
 
-**In:** a new project and its `.csproj`; `Versioning/` moved and linked back; `Package.nuspec` or a second nuspec;
-`packages.push`; the policy's Glob Patterns; `Pack.ps1`; `PackagingTests`; the new assembly's `AGENTS.md`;
-`Versioning/AGENTS.md`'s closing paragraph, which currently says these types reach no consumer; `README.md`;
-`PROGRESS.md`.
+**In:** a new project and its `.csproj`; `Versioning/` moved and linked back; **the namespace of its three files
+changed to `Bennewitz.Ninja.AutoVersioning` (decision 11), with `AssemblyInfoGenerator.cs` and the three test
+classes that call `BuildVersion` following**; `Package.nuspec` or a second nuspec; **a README of its own for the
+new id (decision 12)**; `packages.push`; the policy's Glob Patterns; `Pack.ps1`; `PackagingTests`; the new
+assembly's `AGENTS.md`; `Versioning/AGENTS.md`'s closing paragraph, which currently says these types reach no
+consumer; `README.md`; `PROGRESS.md`.
+
+⚠ The assembly *name* `Bennewitz.Ninja.AutoVersioning.SourceGenerators` does **not** change — only the namespace.
+The generator keeps the name a consumer's compiler loads it by.
 
 **Out:**
 
@@ -99,11 +112,11 @@ irreversible in a way the others are not: the id is claimed on nuget.org permane
 
 | # | Step | Verified by |
 |---|---|---|
-| 0 | **Read the nuget.org policy's actual Glob Patterns**, and settle the namespace question below | A read-only lookup costing nothing, and the only thing that can invalidate decision 1 before any code moves. ⛔ It sat at step 6 in the first draft, *after* five steps of work, and only the maintainer can perform it — a developer-gated unknown must not be the last gate |
-| 1 | **Decision 8's trim, in its own commit, before anything moves**: `GetQuarter` internal, the unused `Generate` overload and `FuzzyBuildVersionComparer` internal or deleted | The suite green with warnings as errors. Doing this first means the diff that moves `Versioning/` is a pure move, and the trim is reviewable on its own rather than hidden inside it |
+| 0 | **Read the nuget.org policy's actual Glob Patterns** | A read-only lookup costing nothing, and now **the only developer-gated unknown left** — the namespace and README questions were settled 2026-11-17, below. It is the one thing that can invalidate decision 1 before any code moves. ⛔ It sat at step 6 in the first draft, *after* five steps of work, and only the maintainer can perform it — a developer-gated unknown must not be the last gate |
+| 1 | **Decision 8's trim and decision 11's namespace, in one commit, before anything moves**: `GetQuarter` internal, the unused `Generate` overload and `FuzzyBuildVersionComparer` internal or deleted; and the three files of `Versioning/` renamespaced to `Bennewitz.Ninja.AutoVersioning`, with `AssemblyInfoGenerator.cs`, the three test classes that call `BuildVersion`, and the `AGENTS.md` files that name the namespace following | The suite green with warnings as errors. Doing both first means the diff that moves `Versioning/` is a **pure move**, and each is reviewable on its own rather than hidden inside the other. ⚠ The namespace is permanent after step 7, which is why it precedes every step that could publish |
 | 2 | The new project, `Versioning/` moved into it, the generator project linking the same files; **decision 9's fix to `AssemblyQualityTests`** | `dotnet build -c Release` with warnings as errors, 0 warnings; the existing suite green and unchanged; the generator assembly still carries its own copy, confirmed in the packed output. ⛔ `AssemblyQualityTests` must be shown to still test the **generator** — assert the assembly's name rather than trusting `typeof(...).Assembly`, since the failure mode here is a test that silently changes target and keeps passing |
-| 3 | Packaging: the nuspec, `packages.push`, `Pack.ps1` | `dotnet pack` into a **fresh** directory, then `assert-packages` — two ids, both declared, each README of a `packages.push` id linking absolutely (one README or two, per the namespace/README decisions below). **Plus a new `PackagingTests` case asserting the `.Abstractions` nupkg actually contains `lib/netstandard2.0/*.dll`**: neither `assert-packages` nor any existing test reads package *contents*, so an empty package would pass every gate this repository has. ⚠ Pack into a fresh directory: `assert-packages` reads every `.nupkg` it finds, and `packages/` is gitignored, so a stale one from an old release fails it misleadingly |
+| 3 | Packaging: the nuspec, `packages.push`, `Pack.ps1` | `dotnet pack` into a **fresh** directory, then `assert-packages` — two ids, both declared, each README of a `packages.push` id linking absolutely — **two READMEs, per decision 12**, and the new nuspec must name its own, since a package carrying none passes the link check silently. **Plus a new `PackagingTests` case asserting the `.Abstractions` nupkg actually contains `lib/netstandard2.0/*.dll`**: neither `assert-packages` nor any existing test reads package *contents*, so an empty package would pass every gate this repository has. ⚠ Pack into a fresh directory: `assert-packages` reads every `.nupkg` it finds, and `packages/` is gitignored, so a stale one from an old release fails it misleadingly |
 | 4 | A test that a consumer can actually call it. ⛔ **It must consume the `.nupkg`, not the built DLL**: pack to a directory, write a `NuGet.config` into the fixture copy with that directory as its only source, and give the fixture a real `<PackageReference Include="Bennewitz.Ninja.AutoVersioning.Abstractions" Version="…" />`. Then the fixture reads its own built assembly's stamp back with `TryGetFromFile` | Green — **and red when `lib/netstandard2.0` is removed from the nuspec**, which is the mutation that proves it. ⛔ The defect this plan exists for is a *packaging* defect: the code was always correct, and only the package failed to deliver it. `FixtureConsumer` wires the generator today with `<Analyzer Include="…{path to the built dll}" />`, so a step-4 test written the same way would reference `.Abstractions.dll` by path, pass, and **prove nothing about whether the package delivers the type** — it would be a test that cannot fail for the thing it exists to catch |
-| 5 | The documents: `README.md`, the new `AGENTS.md`, `Versioning/AGENTS.md`'s closing paragraph, `PROGRESS.md` | `scripts/repo-conventions.cs check` conforms |
+| 5 | The documents: `README.md`, **the new package's own README (decision 12), linking only absolutely**, the new `AGENTS.md`, `Versioning/AGENTS.md`'s closing paragraph, `PROGRESS.md` | `scripts/repo-conventions.cs check` conforms, and `assert-packages` over a fresh pack reports both ids' READMEs linking absolutely |
 | 6 | **The policy's Glob Patterns widened** (per step 0's reading), **and a blank-`version` dispatch of `release.yml` run as a credential preflight** | The preflight lists **both** ids and publishes nothing. ⛔ This must pass before any tag: the 403 described above is only visible here, and a tag that hits it has already published one id permanently. ✅ Checked 2026-11-16 and *not* a problem: `release-target.cs`'s version floor returns `[]` on a 404 from the flat container — "an id nuget.org has never seen has no floor" — so a first release of a new id is not refused for want of a published predecessor |
 | 7 | A release, on the maintainer's word | nuget.org lists both ids at the version |

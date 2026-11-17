@@ -417,6 +417,19 @@ checklist is where someone cutting a release actually looks, which is the whole 
 | `.Abstractions`' public surface | **Trim the unused three before the first release** — `plans/00002` decision 8 |
 | The stale worktree | **Removed**, with its branch |
 
+### Decisions taken 2026-11-17
+
+| Question | Decision |
+|---|---|
+| `plans/00002`'s namespace for the moved types — **permanent after publication** | **`Bennewitz.Ninja.AutoVersioning`**, matching the package family a consumer installs, rather than leaving `…SourceGenerators` (which would have a consumer write `using …SourceGenerators;` to read a version number out of a package called `.Abstractions`) or `…AutoVersioning.Versioning` (a segment implying a sub-area of three types). Mechanical, and it lands in step 1 beside the API trim so step 2's move stays a pure move. `plans/00002` decision 11 |
+| `.Abstractions`' README | **Its own**, not shared. The two packages have different audiences, and a shared README would open the library's nuget.org page with `CompilerVisibleProperty`, `Directory.Build.props` and the `BNAV` diagnostics. A shared README was not available as a middle path anyway: it needs a declared family in `.github/repository.json`, which also changes the release tag shape to `<family>/v…`. `plans/00002` decision 12 |
+| Whether to measure a large parallel solution | **Measure it**, rather than leave the document's opening premise resting on nothing. ⛔ **It overturned the previous correction.** 150 projects (one root, 149 leaves referencing it), `dotnet build -c Release` with **default parallelism**, SDK 11.0.100, all 150 reporting in all 5 runs: **5 of 5 runs used more than one stamp value, up to 11 distinct, spread up to 10 seconds.** The spread scales with project count — four projects was simply too small to show it, which is why the parallel case looked clean. Evaluation is **not** up-front at that scale |
+
+⛔ **Verified while settling the README decision: a package carrying NO README passes the link check
+silently.** `scripts/assert-packages.cs` guards it with `r.Readme is not null`, so omitting
+`<readme>` from the new nuspec yields a bare nuget.org page and a green run. `plans/00002` step 3
+now has to confirm the packed README exists, not merely that its links are absolute.
+
 ### Two findings from checking those decisions rather than assuming them
 
 ⛔ **`Architecture/AssemblyQualityTests.cs` is a trap for `plans/00002`.** It reads
