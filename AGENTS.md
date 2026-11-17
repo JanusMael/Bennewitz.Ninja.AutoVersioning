@@ -35,7 +35,7 @@ layout is flat: one top-level directory per group of generator source.
 | `Directory.Build.targets` | Links the friend-grant files into every project. Not to be confused with `Build.targets`, which consumers get |
 | `AssemblyInfo.InternalsVisibleTo.cs`, `AssemblyInfo.InternalsVisibleTo.External.cs` | The family's solution-wide friend grants: the first written by `repo-conventions.cs grants`, the second for grants to other repositories, by hand |
 | `global.json` | Opts `dotnet test` into Microsoft.Testing.Platform |
-| `Versioning/` | `BuildVersion`, the CalVer algorithm, and its comparer |
+| `Versioning/` | `BuildVersion` and the CalVer algorithm. ⛔ **`namespace Bennewitz.Ninja.AutoVersioning`, unlike the rest of this project** — `plans/00002` decision 11, since these types are to ship in `.Abstractions` |
 | `Syntax/` | The Roslyn syntax builders behind `AssemblyInfoTemplate` |
 | `Enums/` | Reflection helpers over enum types, used by `AssemblyInfoSyntaxFactory.Identity.Flags` |
 | `Hashing/` | `HashCodeUtility` and a vendored `xxHash32` |

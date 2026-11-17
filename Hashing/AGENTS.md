@@ -1,7 +1,15 @@
 # AGENTS.md — `Hashing/`
 
-Hash-code combining for the analyzer assembly. `FuzzyBuildVersionComparer.GetHashCode` is the
-caller that compiles on netstandard2.0; the `#else` branches in `Enums/` that also call it do not.
+Hash-code combining for the analyzer assembly.
+
+⛔ **Nothing that compiles on netstandard2.0 calls this directory any more.**
+`FuzzyBuildVersionComparer.GetHashCode` was that caller and was deleted by `plans/00002` step 1, as
+the only thing in `Versioning/` depending on the rest of the generator. The remaining call sites are
+the `#else` branches in `Enums/`, which **do not compile on this project's only target framework**.
+
+So this directory is, today, reachable code with no reachable caller. That is recorded rather than
+acted on: removing it is not in `plans/00002`'s scope, and `xxHash32` is vendored with its
+verification notes, so a deletion is a decision of its own. `PROGRESS.md` holds the finding.
 
 | File | What it holds |
 |---|---|

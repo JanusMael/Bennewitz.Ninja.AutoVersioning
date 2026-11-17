@@ -489,6 +489,87 @@ stale copy of the source, an older `AssemblyInfoGenerator.cs` among it, and a se
 pruning it returned those copies looking exactly like real matches. `worktrees` belongs in the prune
 list of any search run here.
 
+## `plans/00002` — `TryGetFromFile` reaches a consumer
+
+[`plans/00002`](plans/00002-tryget-from-file-reaches-a-consumer.md), **approved 2026-11-17 and
+frozen** (`bbfa418`, committed alone). Drift from it is recorded here, never edited into it. Its two
+maintainer-only questions were settled the same day and are in the decisions table above.
+
+| Step | State | Notes |
+|---|---|---|
+| 0 · Read the policy's Glob Patterns | **done** — and it needs widening | Below |
+| 1 · The API trim and the namespace | **done** | Below |
+| 2 · The new project and the move | not started | |
+| 3 · Packaging | not started | |
+| 4 · A consumer test over the `.nupkg` | not started | |
+| 5 · The documents | not started | |
+| 6 · Glob Patterns widened, and a preflight | **blocked on the maintainer** | |
+| 7 · A release | not started | |
+
+### Step 0, as read — the pattern does not cover the second id
+
+⛔ **The policy's *Glob Patterns and Packages* field reads `Bennewitz.Ninja.AutoVersioning`, a bare
+exact id with no wildcard, so it does NOT match `Bennewitz.Ninja.AutoVersioning.Abstractions`.**
+Step 6's widening is mandatory, not a formality. Reported by the maintainer 2026-11-17 from
+<https://www.nuget.org/account/trustedpublishing>.
+
+**This does not invalidate the plan.** The pattern is a field the policy owner edits; what step 0
+existed to catch was the opposite case — a policy that could not be made to cover both ids at all.
+
+📏 **Two exact patterns, not a wildcard, is the form to use.** The field is plural and carries as
+many patterns as needed, so `Bennewitz.Ninja.AutoVersioning` and
+`Bennewitz.Ninja.AutoVersioning.Abstractions` both go in it. ⛔ A wildcard
+(`Bennewitz.Ninja.AutoVersioning*`) would also match a future id — and `packages.local`'s own
+comment requires that the policy's pattern match **nothing** in that file. `packages.local` is empty
+today, so a wildcard is harmless today and a trap the first time a local-feed-only id is added, at
+which point it would be published permanently on the next release. Exactness here matches the
+repository's existing refusal to push a `*.nupkg` glob.
+
+⚠ **Still unread, and needed before step 6:** the same policy's **Scopes**. `.Abstractions` is a
+*new* id, so the policy must carry **Publish new packages**, not only *Publish new versions of
+existing packages*. `docs/publishing.md` already states this; nobody has confirmed the live value.
+
+### Step 1, as built — the trim and the namespace
+
+One commit, before anything moves, so that step 2's move stays a pure move.
+
+**The namespace is `Bennewitz.Ninja.AutoVersioning`** on the files in `Versioning/`, while the rest
+of the project stays in `…AutoVersioning.SourceGenerators`. The **assembly name does not change.**
+
+⭐ **It cost no `using` directives at all, and that is a property of the name chosen rather than
+luck.** `Bennewitz.Ninja.AutoVersioning` *encloses* both `…AutoVersioning.SourceGenerators` and
+`…AutoVersioning.Tests`, so the compiler's walk up the enclosing namespaces resolves `BuildVersion`
+from either without one. Both projects built with 0 warnings and 0 errors unchanged. A new top-level
+namespace would have required a `using` in every call site.
+
+**The trim**, decision 8:
+
+| Member | Was | Now | Why |
+|---|---|---|---|
+| `DateTimeOffsetExtensions`, `GetQuarter` | `public` | `internal` | A public extension method on `DateTimeOffset` would land on **every `DateTimeOffset` in every consuming project**. One caller, `BuildVersion.cs` |
+| `BuildVersion.Generate(UInt16, UInt16)` | `public` | `internal` | No caller anywhere. The relative-version algorithm stays public through `TryGetFromFile(FileInfo, int?, out BuildVersion)` |
+| `FuzzyBuildVersionComparer` | `public` class | **deleted** | No caller; one mention in a comment |
+
+⭐ **Deleting the comparer rather than making it internal was settled by evidence, which is why the
+plan left the choice open.** It was the **only** thing in `Versioning/` that depended on the rest of
+the generator — `FuzzyBuildVersionComparer.GetHashCode` called `Hashing/HashCodeUtility`. Kept, step
+2 would have had to drag `Hashing/` into `.Abstractions` or link it there, which is outside the
+plan's scope list. Deleted, `Versioning/` is self-contained and the move is exactly what the plan
+describes.
+
+⛔ **What that leaves behind, recorded rather than acted on: `Hashing/` now has no caller that
+compiles.** `Hashing/AGENTS.md` named `FuzzyBuildVersionComparer.GetHashCode` as "the caller that
+compiles on netstandard2.0"; the only others are `#else` branches in `Enums/` that do not compile on
+this project's single target framework. Removing the directory is **not** in `plans/00002`'s scope,
+and `xxHash32` is vendored with its verification notes, so that is a decision of its own rather than
+a tidy-up inside this plan. Both `AGENTS.md` files now say so.
+
+**Checked and not a problem:** `BNAQ1002` and `BNAQ1004` do not constrain the root namespace —
+`BNAQ1002` is about serializer-DOM types reaching the public surface, `BNAQ1004` about a namespace
+segment shadowing a referenced root such as `System`. Putting `BuildVersion` outside the assembly's
+own name prefix breaks neither. This was checked **before** the edit, since a failure there would
+have meant the namespace decision was unimplementable.
+
 ## Open
 
 ### Consumer reports `BAUTOVERSIONING` "not configured" errors, seen only in CI

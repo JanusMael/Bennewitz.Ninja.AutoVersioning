@@ -3,11 +3,31 @@
 The CalVer algorithm. Compiled into the analyzer assembly; `AssemblyInfoGenerator` calls
 `BuildVersion.Generate` and embeds `BuildVersion.ToString()` in `DirectoryBuildInfo.BuildRelease`.
 
+⛔ **These files declare `namespace Bennewitz.Ninja.AutoVersioning`, not
+`…AutoVersioning.SourceGenerators` like the rest of this project.** `plans/00002` decision 11, taken
+before publication because a namespace cannot be changed after it: these types are to ship in
+`Bennewitz.Ninja.AutoVersioning.Abstractions`, and a consumer should not write
+`using …SourceGenerators;` to read a version number. The assembly *name* is unchanged.
+
+⭐ **No `using` is needed anywhere for this**, which is why the rename cost nothing:
+`Bennewitz.Ninja.AutoVersioning` encloses both `…SourceGenerators` and
+`…AutoVersioning.Tests`, so the compiler's walk up the enclosing namespaces finds these types from
+either. A new top-level namespace would not have that property.
+
 | File | What it holds |
 |---|---|
 | `BuildVersion.cs` | `BuildVersion`: `Generate` (absolute `YEAR.QUARTER.MMdd.HHmm`, or relative to a first year), `TryGetFromFile` to read a stamp back off a built binary, and the culture-invariant `BuildTime` |
-| `DateTimeOffsetExtensions.cs` | `GetQuarter`: `(Month + 2) / 3` |
-| `FuzzyBuildVersionComparer.cs` | Equality within a revision tolerance; `Default` is 30 minutes |
+| `DateTimeOffsetExtensions.cs` | `GetQuarter`: `(Month + 2) / 3`. **`internal`, class and method** |
+
+⛔ **The public surface here is deliberately minimal, and was trimmed before the id was published**
+(`plans/00002` decision 8, step 1). A public member becomes a supported API the moment this assembly
+ships a `lib/`:
+
+| Trimmed | Why |
+|---|---|
+| `DateTimeOffsetExtensions` and `GetQuarter` → `internal` | A **public extension method on `DateTimeOffset`** would appear on every `DateTimeOffset` in every consuming project. One caller, `BuildVersion.cs` |
+| `BuildVersion.Generate(UInt16, UInt16)` → `internal` | No caller at all. The relative-version algorithm it reaches stays public through `TryGetFromFile(FileInfo, int?, out BuildVersion)` |
+| `FuzzyBuildVersionComparer.cs` → **deleted** | No caller; it appeared in one comment. ⭐ It was also the **only** thing in this directory depending on the rest of the generator — it called `Hashing/HashCodeUtility` — so deleting it is what lets `Versioning/` move to `.Abstractions` without dragging `Hashing/` along. See `PROGRESS.md` for what its removal leaves behind in `Hashing/` |
 
 ## Rules
 
@@ -19,10 +39,11 @@ The CalVer algorithm. Compiled into the analyzer assembly; `AssemblyInfoGenerato
 | A stamp is decomposed arithmetically (`TryGetBuildDateTime`), never through a string | `MMdd` and `HHmm` are stored as integers and lose their leading zero; 08:45 comes back as `845` | `BuildVersionFromFileTests.TryGetFromFile_RecoversTheStampedDateAndTime` |
 | `TryGetFromFile` returns false for a version it does not recognise; it validates before constructing | A `Try` method that throws `ArgumentOutOfRangeException` on month 13 breaks its callers | `TryGetFromFile_UnrecognisedVersion_ReturnsFalseWithoutThrowing` |
 | `ToString()` stays printable ASCII with no quote character | It is interpolated raw into a string literal in the consumer's generated source | `BuildVersionTests.ToString_IsPrintableAsciiAndSafeToEmbed` |
-| `FuzzyBuildVersionComparer.GetHashCode` leaves `Revision` out | Two versions it calls equal must hash alike; the relation is not transitive, as its remarks say | Nothing automated |
 
-These types are public but reach no consumer: the package has no `lib/`, so `TryGetFromFile` is
-callable only from this repository's tests. `PROGRESS.md` records the options for closing that.
+These types are public but reach no consumer *yet*: the package has no `lib/`, so `TryGetFromFile` is
+callable only from this repository's tests. **`plans/00002` is the approved plan that closes that**,
+by shipping them in `Bennewitz.Ninja.AutoVersioning.Abstractions`. Progress and drift are in
+`PROGRESS.md`.
 
 ## What reading a stamp back now answers
 

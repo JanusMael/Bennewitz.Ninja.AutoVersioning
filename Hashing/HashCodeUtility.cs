@@ -9,7 +9,7 @@ namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
 /// Ported from the original with one change: the two GetCompositeDeterministicHashCode overloads
 /// are omitted, because they depend on a GetDeterministicHashCode() extension that does not exist
 /// in this project. For int inputs that overload was equivalent to <see cref="CombineHashCodes(int[])"/>
-/// anyway, which is what <c>FuzzyBuildVersionComparer</c> uses.
+/// anyway.
 /// </remarks>
 [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
 [SuppressMessage("ReSharper", "ConditionalAccessQualifierIsNonNullableAccordingToAPIContract")]

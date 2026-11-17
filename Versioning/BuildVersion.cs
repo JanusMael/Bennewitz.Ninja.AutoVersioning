@@ -5,7 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
+namespace Bennewitz.Ninja.AutoVersioning;
 
 /// <summary>
 /// Assembly <see cref="Version"/> information that is calculated at build time and the static algorithms to calculate it
@@ -151,7 +151,13 @@ public sealed record BuildVersion
     public static BuildVersion Generate(DateTimeOffset timestamp) => new(timestamp);
 
     /// <inheritdoc cref="BuildVersion(UInt16,UInt16)" />
-    public static BuildVersion Generate(UInt16 majorVersion, UInt16 yearOfFirstVersion) => new(majorVersion, yearOfFirstVersion);
+    /// <remarks>
+    /// ⛔ <c>internal</c> deliberately, per <c>plans/00002</c> decision 8: it has no caller, and a
+    /// public member becomes a supported API the moment this assembly ships a <c>lib/</c>. The
+    /// relative-version algorithm it reaches is still public through
+    /// <see cref="TryGetFromFile(FileInfo, int?, out BuildVersion)" />.
+    /// </remarks>
+    internal static BuildVersion Generate(UInt16 majorVersion, UInt16 yearOfFirstVersion) => new(majorVersion, yearOfFirstVersion);
 
     public static bool TryGetFromFile(FileInfo fileInfo, out BuildVersion? buildVersion) =>
         TryGetFromFile(fileInfo, null, out buildVersion);
