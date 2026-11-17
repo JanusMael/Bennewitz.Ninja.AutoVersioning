@@ -306,10 +306,46 @@ the other two. The document now reports each configuration with its number, draw
 conclusion, and states plainly what is **not** measured: a genuinely large solution, where a
 parallel build may still reach projects minutes apart.
 
-⚠ **Still unmeasured, and the maintainer's call whether it is worth measuring:** a large parallel
-solution. Four small projects is not the topology the document opens by describing, and nothing here
-rules out a spread at that scale. The guarantees that need no measurement are unchanged — the Debug
-day-hold is exact, and an explicit `-p:BuildTimestamp` is exact in every configuration.
+### The large solution, measured — 2026-11-17
+
+⛔ **Measured on the maintainer's word, and it overturned the `-m:1` conclusion above.** The spread
+is not an artifact of a flag: it **scales with project count**, and four projects was simply too few
+to show it.
+
+150 projects (one root, 149 leaves referencing it), generated in temp, `dotnet build -c Release`
+with **default parallelism** and no flags, SDK 11.0.100. All 150 reported in all 25 builds, so a
+single value would be agreement and not a missing line:
+
+| | |
+|---|---|
+| builds with more than one stamp value | **25 of 25** |
+| most distinct values in one build | **12** |
+| spread, seconds | min 1, max 11, **mean 8** |
+| builds whose projects took two different `HHmm` minutes | **2 of 25** — observed, not modelled |
+
+The two crossings are `202611171401`/`202611171402` and `202611171402`/`202611171403`: **two
+assemblies of one build carrying versions a minute apart.** That is the risk the document had been
+reaching for since its first edition, and the edition before this one had ruled it out.
+
+**The mechanism, now consistent with every measurement taken.** A project's stamp is captured when
+the build first *evaluates* it, so the spread is how long evaluation takes to reach the last project.
+At four projects a parallel build evaluates them together before any compiles — a 4-second `Exec`
+delay forced into the one the others reference could not separate them over 6 builds. `-m:1`
+separates them only because it serialises evaluation behind each project's build, which is a small-
+scale stand-in for what scale does on its own. At 150 projects no flag is needed.
+
+**Consequences, stated separately because they differ:** `BuildRelease` carries the seconds, so it
+differs between projects on essentially every clock-stamped build of a large solution.
+`AutoVersion` (`HHmm`) and `AutoPackageVersion` (the day) differ only when the spread straddles a
+boundary — 2 of 25 here.
+
+⚠ **Still not measured, and said so in the document rather than generalised past:** projects slow to
+*compile*. These are one-type projects, so what was measured is the duration of evaluation.
+
+📏 **The guidance this finally produces**, and the reason the measurement was worth taking: in a
+solution of any real size, pass `-p:BuildTimestamp` on the builds whose version must be uniform —
+Release and CI, where the clock is still taken per project and the artifact leaves the machine.
+`Build.ps1.template` and `Build.sh.template` already do. Debug needs nothing, being held to its day.
 
 ⚠ **`assert-packages` reads every `.nupkg` in the directory it is given, so a stale one fails it
 misleadingly.** Run against `packages/Release`, it reported four relative links in "the README" —
@@ -423,7 +459,7 @@ checklist is where someone cutting a release actually looks, which is the whole 
 |---|---|
 | `plans/00002`'s namespace for the moved types — **permanent after publication** | **`Bennewitz.Ninja.AutoVersioning`**, matching the package family a consumer installs, rather than leaving `…SourceGenerators` (which would have a consumer write `using …SourceGenerators;` to read a version number out of a package called `.Abstractions`) or `…AutoVersioning.Versioning` (a segment implying a sub-area of three types). Mechanical, and it lands in step 1 beside the API trim so step 2's move stays a pure move. `plans/00002` decision 11 |
 | `.Abstractions`' README | **Its own**, not shared. The two packages have different audiences, and a shared README would open the library's nuget.org page with `CompilerVisibleProperty`, `Directory.Build.props` and the `BNAV` diagnostics. A shared README was not available as a middle path anyway: it needs a declared family in `.github/repository.json`, which also changes the release tag shape to `<family>/v…`. `plans/00002` decision 12 |
-| Whether to measure a large parallel solution | **Measure it**, rather than leave the document's opening premise resting on nothing. ⛔ **It overturned the previous correction.** 150 projects (one root, 149 leaves referencing it), `dotnet build -c Release` with **default parallelism**, SDK 11.0.100, all 150 reporting in all 5 runs: **5 of 5 runs used more than one stamp value, up to 11 distinct, spread up to 10 seconds.** The spread scales with project count — four projects was simply too small to show it, which is why the parallel case looked clean. Evaluation is **not** up-front at that scale |
+| Whether to measure a large parallel solution | **Measure it**, rather than leave the document's opening premise resting on nothing. ⛔ **It overturned the previous correction.** See *The large solution, measured* below |
 
 ⛔ **Verified while settling the README decision: a package carrying NO README passes the link check
 silently.** `scripts/assert-packages.cs` guards it with `r.Readme is not null`, so omitting

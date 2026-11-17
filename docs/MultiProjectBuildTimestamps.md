@@ -1,24 +1,30 @@
 # BuildTimestamp: Consistency Across Multi-Project Builds
 
-In a large solution, compilation of later projects can happen minutes after earlier ones. Left unchecked, each project would stamp its own `HHmm` revision at the moment *it* compiles, producing different versions within a single build.
+In a large solution, the build reaches its later projects long after its earlier ones. Left unchecked, each project stamps its own `HHmm` revision from the clock as the build arrives at it — and in a 150-project solution measured below, that is two assemblies whose versions are a minute apart inside one build, in 2 builds of 25.
 
 ## How it's solved
 
-`BuildTimestamp` is captured during MSBuild **property evaluation**, which happens before any project compiles, so the value does not depend on how long compilation itself takes. In a **Debug** build it is held to the day — midnight, in the stamp's own format — so every project in the build takes one value exactly. Every other configuration, Release among them, captures the current time instead.
+`BuildTimestamp` is captured during MSBuild **property evaluation**, not when a project compiles, so it does not depend on how long compilation takes. That is a *narrower* guarantee than it sounds, and the measurements below are what it is worth: evaluation is per project, and in a large solution it is interleaved with building rather than finished before it. In a **Debug** build the stamp is held to the day — midnight, in the stamp's own format — so every project in the build takes one value exactly, whatever the solution's size. Every other configuration, Release among them, captures the current time instead.
 
-> **The stamp is captured once per project *evaluation*. Whether that is once per build depends on how the build is run.** Measured on the four projects below, clock-stamped in Release, SDK 11.0.100:
+> **The stamp is captured once per project *evaluation*, and in a solution of any size that is not once per build.** A project's stamp is taken when the build first evaluates it, so the spread across a build is how long evaluation takes to reach the last project — **which grows with the number of projects.** Measured clock-stamped in Release on SDK 11.0.100, every project's report confirmed present in every run:
 >
-> | How the build ran | Distinct stamps across the four projects |
-> |---|---|
-> | `dotnet build <solution>` — default parallelism | **One value, in 16 builds of 16**, including 6 with a 4-second delay inserted into `Core`, which the other three reference. MSBuild evaluates the solution's projects together, before any of them builds |
-> | `dotnet publish <project>`, with or without `-m:1` | One value |
-> | `dotnet build <solution> -m:1` — single node | **Two or three values, in 24 builds of 24**, about a second apart: `Leaf`, built last because it references the others, evaluates after `Core` has finished building. **One of those 24 straddled a `:00` boundary, so two projects took different `HHmm` minutes — two different versions inside one build** |
+> | How the build ran | Projects | Distinct stamps in one build | Spread | Crossed a minute |
+> |---|---|---|---|---|
+> | `dotnet build <solution>`, default parallelism | **150** | **2 to 12; every one of 25 builds used more than one** | 1–11 s, mean 8 | **2 of 25 builds** |
+> | `dotnet build <solution> -m:1`, single node | 4 | 2 or 3; every one of 24 builds | 1–2 s | 1 of 24 builds |
+> | `dotnet build <solution>`, default parallelism | 4 | one value, all 16 builds | 0 | 0 of 16 |
+> | `dotnet publish <project>`, with or without `-m:1` | 4 | one value, all 6 builds | 0 | 0 of 6 |
 >
-> `-m:1` is what this repository's own test fixture passes, for log attributability. A consumer does not pass it, and in the configuration a consumer does use, the projects agreed on every build measured.
+> **Four projects are too few to show it.** At that size a parallel build evaluates them together before any compiles — a 4-second delay forced into the project the other three reference could not separate them, across 6 builds. `-m:1` separates them only because it serialises evaluation behind each project's build, which is why this repository's test fixture passes it for log attributability. At 150 projects the spread appears without any flag.
 >
-> ⚠ **Earlier editions of this document drew general conclusions from measurements that never named their configuration** — first that all projects "normally land on the same value", then that most builds disagree. Neither survives the table above, and the table is four small projects rather than the large solution this document opens by describing: a parallel build of one may still reach projects minutes apart, which is not measured here.
+> **What the spread costs, precisely:**
 >
-> Two things hold regardless of build shape: the day-held Debug stamp is exact, and a `-p:BuildTimestamp` override is exact in every configuration. **If every project must carry one version whatever the build's shape, set the stamp yourself.**
+> - `DirectoryBuildInfo.BuildRelease` carries the seconds, so it **differs between projects on essentially every clock-stamped build of a large solution** — up to 12 values in one build here.
+> - `AutoVersion` is precise to `HHmm` and `AutoPackageVersion` to the day, so those differ **only when the spread straddles a boundary** — observed in **2 of 25** builds, each producing assemblies whose versions are a minute apart inside a single build.
+>
+> ⚠ **Three earlier editions of this passage each generalised from a measurement whose configuration they never named** — that all projects "normally land on the same value", then that most builds disagree, then that the disagreement needs `-m:1`. The table above is the first to state project count and build mode for every number in it. What it still does not cover: projects that are slow to *compile*. These are one-type projects, so what was measured is the duration of evaluation.
+>
+> Two things hold regardless of solution size or build mode: the day-held Debug stamp is exact, and a `-p:BuildTimestamp` override is exact in every configuration. **So in a solution of any real size, pass `-p:BuildTimestamp` on the builds whose version must be uniform — Release and CI above all, which is where the clock is still taken per project and where the artifact leaves the machine.** `Build.ps1.template` and `Build.sh.template` already do; Debug needs nothing, being held to its day.
 
 If you override `BuildTimestamp` yourself (CI or `Build.ps1.template`), capture it as **local time on the same machine that runs the build** — the generator parses it with `DateTimeStyles.AssumeLocal`, so a UTC timestamp (e.g. `date -u`) would be misinterpreted unless that machine's local zone is already UTC. This is a non-issue for the shipped script and README examples, which are already local-time end to end; it only matters if you hand-roll a custom override.
 
