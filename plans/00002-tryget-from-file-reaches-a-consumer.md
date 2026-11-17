@@ -1,6 +1,6 @@
 # 00002 — `TryGetFromFile` reaches a consumer, through a `.Abstractions` package
 
-> Status: **draft, awaiting approval**. Supersedes nothing.
+> Status: **approved 2026-11-17**. Supersedes nothing.
 
 `BuildVersion.TryGetFromFile` reads this package's own CalVer stamp back off a built binary. It is correct, it is
 tested, and **no consumer can call it.** `Package.nuspec` ships the one assembly to `analyzers\dotnet\cs` with
