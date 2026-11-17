@@ -6,11 +6,19 @@ In a large solution, compilation of later projects can happen minutes after earl
 
 `BuildTimestamp` is captured during MSBuild **property evaluation**, which happens before any project compiles, so the value does not depend on how long compilation itself takes. In a **Debug** build it is held to the day — midnight, in the stamp's own format — so every project in the build takes one value exactly. Every other configuration, Release among them, captures the current time instead.
 
-> **A capture per evaluation is not one capture per build, and the spread can reach the version.** A project takes its stamp when the build first asks for it, so the projects of one build are stamped about a second apart. Measured twice, on different SDKs: over 24 clock-stamped builds of mixed verbs, 19 stamped their projects with more than one value, up to three, and a `dotnet publish` stamped the root library a second after the projects referencing it; over 24 clean `dotnet build -c Release` runs of the four-project consumer below, on SDK 11.0.100, **24 of 24 did**, again up to three.
+> **The stamp is captured once per project *evaluation*. Whether that is once per build depends on how the build is run.** Measured on the four projects below, clock-stamped in Release, SDK 11.0.100:
 >
-> **One of those 24 straddled a `:00` second boundary, so its projects took two different `HHmm` minutes — two different versions inside one build.** A one-second spread crosses a minute about one build in sixty, so that is the mechanism's own rate and not an anomaly; the earlier sample of 24 happened to contain none, which is why this document once claimed the version always agreed. `DirectoryBuildInfo.BuildRelease`, which carries the seconds, differs on nearly every clock-stamped multi-project build.
+> | How the build ran | Distinct stamps across the four projects |
+> |---|---|
+> | `dotnet build <solution>` — default parallelism | **One value, in 16 builds of 16**, including 6 with a 4-second delay inserted into `Core`, which the other three reference. MSBuild evaluates the solution's projects together, before any of them builds |
+> | `dotnet publish <project>`, with or without `-m:1` | One value |
+> | `dotnet build <solution> -m:1` — single node | **Two or three values, in 24 builds of 24**, about a second apart: `Leaf`, built last because it references the others, evaluates after `Core` has finished building. **One of those 24 straddled a `:00` boundary, so two projects took different `HHmm` minutes — two different versions inside one build** |
 >
-> The day-held Debug stamp is exact rather than merely close, and a `-p:BuildTimestamp` override is exact in any configuration. **If every project of a Release build must carry one version, set the stamp yourself** rather than relying on the projects landing in the same minute.
+> `-m:1` is what this repository's own test fixture passes, for log attributability. A consumer does not pass it, and in the configuration a consumer does use, the projects agreed on every build measured.
+>
+> ⚠ **Earlier editions of this document drew general conclusions from measurements that never named their configuration** — first that all projects "normally land on the same value", then that most builds disagree. Neither survives the table above, and the table is four small projects rather than the large solution this document opens by describing: a parallel build of one may still reach projects minutes apart, which is not measured here.
+>
+> Two things hold regardless of build shape: the day-held Debug stamp is exact, and a `-p:BuildTimestamp` override is exact in every configuration. **If every project must carry one version whatever the build's shape, set the stamp yourself.**
 
 If you override `BuildTimestamp` yourself (CI or `Build.ps1.template`), capture it as **local time on the same machine that runs the build** — the generator parses it with `DateTimeStyles.AssumeLocal`, so a UTC timestamp (e.g. `date -u`) would be misinterpreted unless that machine's local zone is already UTC. This is a non-issue for the shipped script and README examples, which are already local-time end to end; it only matters if you hand-roll a custom override.
 

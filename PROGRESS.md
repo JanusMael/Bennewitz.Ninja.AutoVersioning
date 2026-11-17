@@ -277,24 +277,34 @@ method, which needs no harness of its own: lay out `Tests/fixtures/incremental` 
 stamps each build reported. Release, because Debug now holds to the day and would report one value by
 construction.
 
-| | Earlier sample (mixed verbs, SDK 10.0.404) | 2026-11-17 (`build -c Release`, SDK 11.0.100) |
-|---|---|---|
-| builds with more than one value | 19 of 24 | **24 of 24** |
-| most values in one build | 3 | 3 |
-| builds crossing a minute | 0 of 24 | **1 of 24** |
+⛔ **And the re-measurement's first conclusion was wrong too — caught by stepping back on it before
+anything else was built on it.** The whole phenomenon needs **`-m:1`**, which is what
+`FixtureConsumer.Run` hardcodes for log attributability and what **no consumer passes**:
 
-So the *version* does **not** always agree: build 8 stamped `20261117112859` and `20261117112900`,
-two different `HHmm` minutes, **two different versions inside one build.** A one-second spread
-crosses a minute about one build in sixty, so a sample of 24 containing none is ordinary luck, not
-evidence of agreement — the first correction generalised from the absence of a 1-in-60 event in 24
-trials. The document now states the rate, the mechanism and the action: if every project of a
-Release build must carry one version, set `BuildTimestamp` yourself.
+| How the build ran | Distinct stamps across the four projects |
+|---|---|
+| `dotnet build <solution>`, default parallelism | **1 value, 16 of 16** — 10 plain, plus 6 with a 4-second `Exec` delay inserted into `Core`, which the other three reference |
+| `dotnet publish <project>`, with or without `-m:1` | 1 value, 6 of 6 |
+| `dotnet build <solution> -m:1` | **2 or 3 values, 24 of 24**, ~1–2 s apart; **1 of 24 crossed a minute** (`20261117112859` / `20261117112900`) |
 
-📏 **The lesson is about the shape of the claim, not the number.** "19 of 24" was relayed from
-`plans/00001` into consumer-facing documentation without being re-measured, and the reassurance
-attached to it was never a measurement at all — it was an inference from a null result in a small
-sample. The phenomenon is *more* common than the shipped text says, and its one real consequence is
-the one the text ruled out.
+All four projects reported in every run — checked, so a single value is agreement and not a missing
+report. Under `-m:1` the late one is always `Leaf`, built last because it references the other two,
+evaluating after `Core` has built. Under default parallelism MSBuild evaluates the solution's
+projects together *before* any of them builds, which the inserted delay could not perturb.
+
+📏 **The lesson is the shape of the claim, three times over.** Each edition of that paragraph
+generalised a measurement whose configuration it never named: the original said projects always
+agree; `v2026.4.1116` said 19 of 24 disagree and the version still agrees; the first fix here said
+24 of 24 disagree and the version sometimes does not. The common defect is the conclusion, not the
+arithmetic — and the last of the three was written in the same commit that diagnosed the defect in
+the other two. The document now reports each configuration with its number, draws no general
+conclusion, and states plainly what is **not** measured: a genuinely large solution, where a
+parallel build may still reach projects minutes apart.
+
+⚠ **Still unmeasured, and the maintainer's call whether it is worth measuring:** a large parallel
+solution. Four small projects is not the topology the document opens by describing, and nothing here
+rules out a spread at that scale. The guarantees that need no measurement are unchanged — the Debug
+day-hold is exact, and an explicit `-p:BuildTimestamp` is exact in every configuration.
 
 ⚠ **`assert-packages` reads every `.nupkg` in the directory it is given, so a stale one fails it
 misleadingly.** Run against `packages/Release`, it reported four relative links in "the README" —
