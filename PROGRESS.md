@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Latest release | `v2026.4.1031` — the sync to Bennewitz.Ninja.Templates `2026.4.1031`: the packed README links absolutely and the analyzer assembly carries its symbols. nuget.org lists it. The one before, `v2026.3.928`, was the `BNAV` rename |
+| Latest release | `v2026.4.1116` — `plans/00001`: the Debug day-hold, and `BNAV05`, **a breaking change**. **nuget.org lists it, confirmed 2026-11-17.** Do not read the green workflow as the release: the push logged `Created` and `Your package was pushed` at 15:47 CST on 2026-11-16, and a probe 17 minutes later still read `404` from the flat container, the package page and the registration index — NuGet's validation had not finished, and a failed validation is indistinguishable from a slow one to anyone but the owner. The one before, `v2026.4.1031`, was the sync to Bennewitz.Ninja.Templates `2026.4.1031`; `v2026.3.928` was the `BNAV` rename |
 | `main` | At `v2026.4.1031` plus the syncs to Bennewitz.Ninja.Templates `2026.4.1103`, `2026.4.1111`, `2026.4.1113` and `2026.4.1114`, and the catch-up with the bbpkg template of 2026-11-11 (JanusMael/Bennewitz.Ninja.AutoVersioning#10). **The sync to `2026.4.1114`** (2026-11-16, on the maintainer's word, from the Templates session): `Bennewitz.Ninja.CodeQuality` is raised from `2026.4.1111` to `2026.4.1113`, whose `BNCQ1009` and `BNCQ3001` now follow a delegate held in a local to its body; the restore resolves `2026.4.1113`, and the analyzer loads into both compilations and reports nothing. `docs/publishing.md` takes the template's version-floor sentences under "Choosing the version" and its two floor rows in the failure table. The scripts did not change in that release, and `scripts/repo-conventions.cs` and `scripts/release-target.cs` still match the template by SHA-256. Measured as CI runs it: the build with warnings as errors, 0 warnings, 55 of 55 tests, pack, `assert-packages`, and `check` conforms. **The sync to `2026.4.1113`** (2026-11-13, on the maintainer's word, from the Templates session): `scripts/repo-conventions.cs` and `scripts/release-target.cs` are that release's, byte for byte. `resolve` now refuses a version below the newest nuget.org lists for the id, unless nuget.org already lists it (a re-run); tried against nuget.org, whose newest is `2026.4.1031`: `v2026.4.1113` resolves, `v2026.4.1031` passes as a re-run, `v2026.4.1030` and `v2026.3.702` are refused with the floor message. `check` now also asks for the `Bennewitz.Ninja.CodeQuality` pin, which is raised from `2026.4.1104` to `2026.4.1111`, every rule at its default, the family's decision of 2026-11-10: the analyzer loads into both compilations here and reports nothing. The new floor is an invariant row in `AGENTS.md` and is named in `scripts/AGENTS.md` and `release.yml`. Measured as CI runs it: the build with warnings as errors, 0 warnings, 55 of 55 tests, pack, `assert-packages`, and `check` conforms. The sync to `2026.4.1111` brought the checks that `packages.push` resolves through `scripts/release-target.cs` and that `Bennewitz.Ninja.AssemblyQuality` is pinned. The catch-up brought `scripts/release-target.cs` and the template's `release.yml`, `docs/publishing.md`, and the `Packaging` and `AssemblyQuality` tests ported to MSTest; `NUGET_USER` is a repository variable (`JanusMael`), not a secret, so a 401 shows the name it tried, and the old secret is deleted. The first blank-version preflight, run `43050490199`, logged in and published nothing. `Microsoft.VisualStudio.Threading.Analyzers` 18.12.1 is referenced privately with only `VSTHRD101` and `VSTHRD110` on, the family's decision of 2026-11-03. Nothing the package ships changes, so no release follows from any of these syncs |
 | Plans | `plans/` exists, with its own `AGENTS.md` and `CLAUDE.md` and a row in `AGENTS.md`'s Layout table. `scripts/repo-conventions.cs` counts untracked files, so those two are needed the moment the directory exists on disk, before anything in it is committed |
 | CI | green |
@@ -44,7 +44,7 @@ frozen. Drift from it is recorded here, never edited into it.
 | 5 · `VersionDerivationTests` | **done**; 97 of 97, and proven red both ways | Below |
 | 6 · The documents | **done**; `check` and `assert-packages` both pass | Below |
 | 7 · The `AGENTS.md` invariants | **done**; `check` conforms | Below |
-| 8 · A release | the maintainer's; **prepared but not tagged** | Below |
+| 8 · A release | **done** — `v2026.4.1116`, tagged by the maintainer 2026-11-16, listed on nuget.org 2026-11-17 | Below |
 
 ### Step 1, as built
 
@@ -265,10 +265,36 @@ Decisions 8 and 9, in five files. `check` conforms, `assert-packages` reports *"
 
 **The claim that was wrong, and exactly how.** The document said that captured at evaluation "all
 projects normally land on the same value". Measured, 19 of 24 clock-stamped builds stamped their
-projects with **more than one value, up to three**. But the correction is narrower than it first
-looks and the document now says so: none of the 24 crossed a minute, so the *version* — precise only
-to `HHmm` — did agree throughout. It is `BuildRelease`, which carries the seconds, that mostly did
-not. Overstating this would have been as wrong as the original claim.
+projects with **more than one value, up to three**.
+
+⛔ **The correction itself was then wrong, and shipped that way in `v2026.4.1116`.** It added that
+"none of those 24 crossed a minute, so the *version* — precise only to `HHmm` — agreed throughout",
+and called a stronger reading an overstatement. **Re-measured 2026-11-17 on SDK 11.0.100.** The
+method, which needs no harness of its own: lay out `Tests/fixtures/incremental` as
+`FixtureConsumer.Create` does, add a `BeforeTargets="CoreCompile"` target that echoes
+`$(MSBuildProjectName)` with `$(BuildTimestamp)`, then 24 times delete every `obj` and `bin` and run
+`dotnet build incremental.slnx -c Release -v:detailed -nodeReuse:false -m:1`, counting the distinct
+stamps each build reported. Release, because Debug now holds to the day and would report one value by
+construction.
+
+| | Earlier sample (mixed verbs, SDK 10.0.404) | 2026-11-17 (`build -c Release`, SDK 11.0.100) |
+|---|---|---|
+| builds with more than one value | 19 of 24 | **24 of 24** |
+| most values in one build | 3 | 3 |
+| builds crossing a minute | 0 of 24 | **1 of 24** |
+
+So the *version* does **not** always agree: build 8 stamped `20261117112859` and `20261117112900`,
+two different `HHmm` minutes, **two different versions inside one build.** A one-second spread
+crosses a minute about one build in sixty, so a sample of 24 containing none is ordinary luck, not
+evidence of agreement — the first correction generalised from the absence of a 1-in-60 event in 24
+trials. The document now states the rate, the mechanism and the action: if every project of a
+Release build must carry one version, set `BuildTimestamp` yourself.
+
+📏 **The lesson is about the shape of the claim, not the number.** "19 of 24" was relayed from
+`plans/00001` into consumer-facing documentation without being re-measured, and the reassurance
+attached to it was never a measurement at all — it was an inference from a null result in a small
+sample. The phenomenon is *more* common than the shipped text says, and its one real consequence is
+the one the text ruled out.
 
 ⚠ **`assert-packages` reads every `.nupkg` in the directory it is given, so a stale one fails it
 misleadingly.** Run against `packages/Release`, it reported four relative links in "the README" —
@@ -321,23 +347,42 @@ setup. Each is a candidate for a plan of its own, none for a silent edit here.
 **No drift from the plan.** Step 7's verification — `check` conforms, and the invariant table names a
 real guard for every row it can — holds as written.
 
-### Step 8, prepared — the tag is the maintainer's
+### Step 8, as released — `v2026.4.1116`
 
-Decided 2026-11-16: prepare everything but the tag.
+Prepared 2026-11-16 by decision (everything but the tag), tagged the same day by the maintainer,
+confirmed on nuget.org 2026-11-17.
 
 - **`BNAV05` moved** from `AnalyzerReleases.Unshipped.md` into `AnalyzerReleases.Shipped.md` under
   `## Release 2026.4.1116`. `Unshipped.md` now holds only its header, which is the state
-  `RS2000`/`RS2001` expect between releases.
-- **The notes are drafted** at
-  `C:\Users\Janus\AppData\Local\Temp\claude\04a262fe8f2a3d00\e3e7baad-04fd-43a1-b6b8-4186c82cb638\scratchpad\release-notes-2026.4.1116.md`
-  — deliberately not committed, there being no convention here for storing them; say the word and
-  they move into the repository. They lead with `BNAV05` as a breaking change and carry decision 7's
-  two reading-back consequences, as `plans/00001` requires.
+  `RS2000`/`RS2001` expect between releases. Proven to be a real check, not a skipped one: removing
+  the row produced `error RS2000: Rule 'BNAV05' is not part of any analyzer release`.
+- **The notes were written by hand** and replaced the body `--generate-notes` had produced. See the
+  finding below: that body was live and misleading for a day.
+- **The packed artifact was verified from the release asset**, not from the working tree — unzipped,
+  and read: `build/Bennewitz.Ninja.AutoVersioning.props` carries `DateTime]::Today` (the hold); the
+  analyzer assembly carries `BNAV00` through `BNAV05`; the corrected
+  `docs/MultiProjectBuildTimestamps.md`, the README's hold section and both templates' override
+  warning are all present.
 
-⛔ **The `## Release 2026.4.1116` heading is the tag's date, so this commit commits to tagging on
+⛔ **A green `release.yml` is not a release, and 17 minutes of `404` is not a failure either.** The
+push logged `Created … 429ms` and `Your package was pushed.`; the flat container, the package page
+and the registration index all still read `404` / `"upper":"2026.4.1031"` 17 minutes later, and read
+`200` with `2026.4.1116` listed the next morning. NuGet's validation sits between the two, and
+**anonymously a validation that failed looks exactly like one that has not finished** — only the
+owner's nuget.org account or email distinguishes them. `AGENTS.md`'s Releasing checklist already
+said to confirm on nuget.org and not on a green run; this is what that sentence is worth.
+
+⛔ **`--generate-notes` produced a misleading body, and it stayed live for a day.** It listed the
+five template-sync pull requests and **never mentioned `BNAV05`, a breaking change, or the Debug
+hold** — a release whose public notes described chores. It is the second time it has misled here (the
+previous release's body named two pull requests from before that release). The body is now the
+hand-written notes. ⛔ **The `--generate-notes` body is not a starting point to edit; it is wrong
+about what the release contains, because it reports merges rather than effects.**
+
+⛔ **The `## Release 2026.4.1116` heading was the tag's date, so that commit committed to tagging on
 2026-11-16.** Tag on another day and both the heading and the tag must change together — the version
 *is* the date, and `scripts/release-target.cs` refuses a quarter that is not its date's. The
-Releasing checklist in `AGENTS.md` now says so, beside the one-release-per-day rule.
+Releasing checklist in `AGENTS.md` says so, beside the one-release-per-day rule.
 
 **The one-release-per-day rule is now in the Releasing checklist**, on the maintainer's word of
 2026-11-16. It had been recorded here but deliberately withheld from `AGENTS.md`, having arrived as
