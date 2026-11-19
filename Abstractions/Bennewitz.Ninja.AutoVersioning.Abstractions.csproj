@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Bennewitz.Ninja.AutoVersioning.Abstractions: the CalVer types a CONSUMER can call.
+
+    plans/00002 exists because BuildVersion.TryGetFromFile is correct, tested, and unreachable: the
+    AutoVersioning package ships one analyzer assembly to analyzers\dotnet\cs with no lib\, so a
+    consumer's compiler loads it and the consumer's compilation never sees it. This project is the
+    lib\ that fixes that.
+
+    ⛔ The GENERATOR compiles these same source files into itself — see the <Compile Include> in
+    Bennewitz.Ninja.AutoVersioning.csproj. That duplication is deliberate: the analyzer must stay a
+    single self-contained assembly with NO dependencies, because code on the generator's path may
+    use only what the compiler host supplies. The generator must never take a PackageReference or
+    ProjectReference on this project for these types.
+
+    ⛔ Nor may the TEST project reference this one. It references the generator, and BuildVersion
+    exists in both assemblies, so a second reference makes every BuildVersion call site CS0433.
+    plans/00002 decision 10.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <!-- Unlike the generator, this assembly's name matches its package id and it ships a lib\. -->
+    <AssemblyName>Bennewitz.Ninja.AutoVersioning.Abstractions</AssemblyName>
+    <RootNamespace>Bennewitz.Ninja.AutoVersioning</RootNamespace>
+
+    <!--
+      Packing is plans/00002 step 3, not this step: the id is not yet in packages.push, and
+      scripts/assert-packages.cs fails the build on a packed id declared in neither list. ⛔ Flip
+      this with the nuspec and packages.push in the same change, never on its own.
+    -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

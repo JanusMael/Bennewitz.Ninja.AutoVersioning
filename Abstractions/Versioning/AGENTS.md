@@ -1,7 +1,12 @@
-# AGENTS.md — `Versioning/`
+# AGENTS.md — `Abstractions/Versioning/`
 
-The CalVer algorithm. Compiled into the analyzer assembly; `AssemblyInfoGenerator` calls
-`BuildVersion.Generate` and embeds `BuildVersion.ToString()` in `DirectoryBuildInfo.BuildRelease`.
+The CalVer algorithm. ⛔ **Compiled into two assemblies**: it belongs to
+`Bennewitz.Ninja.AutoVersioning.Abstractions`, which ships it as a `lib\` a consumer can call, and
+the generator **links these same source files** so the analyzer stays one self-contained assembly
+with no dependencies. `AssemblyInfoGenerator` calls `BuildVersion.Generate` and embeds
+`BuildVersion.ToString()` in `DirectoryBuildInfo.BuildRelease`.
+
+⚠ **A change here lands in both.** Neither assembly references the other; see `../AGENTS.md`.
 
 ⛔ **These files declare `namespace Bennewitz.Ninja.AutoVersioning`, not
 `…AutoVersioning.SourceGenerators` like the rest of this project.** `plans/00002` decision 11, taken

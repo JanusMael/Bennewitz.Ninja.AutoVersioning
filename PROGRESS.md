@@ -499,7 +499,7 @@ maintainer-only questions were settled the same day and are in the decisions tab
 |---|---|---|
 | 0 · Read the policy's Glob Patterns | **done** — and it needs widening | Below |
 | 1 · The API trim and the namespace | **done** | Below |
-| 2 · The new project and the move | not started | |
+| 2 · The new project and the move | **done** | Below |
 | 3 · Packaging | not started | |
 | 4 · A consumer test over the `.nupkg` | not started | |
 | 5 · The documents | not started | |
@@ -528,6 +528,64 @@ repository's existing refusal to push a `*.nupkg` glob.
 ⚠ **Still unread, and needed before step 6:** the same policy's **Scopes**. `.Abstractions` is a
 *new* id, so the policy must carry **Publish new packages**, not only *Publish new versions of
 existing packages*. `docs/publishing.md` already states this; nobody has confirmed the live value.
+
+### Step 2, as built — the new project and the move
+
+`Abstractions/` is a new top-level directory holding
+`Bennewitz.Ninja.AutoVersioning.Abstractions.csproj` and `Versioning/`, moved there from the root
+with `git mv` so the history follows. `IsPackable` is **`false`** until step 3: the id is not in
+`packages.push`, and `assert-packages` fails the build on a packed id declared in neither list.
+
+**Verified as the plan requires:** `dotnet build -c Release` 0 warnings 0 errors with
+`TreatWarningsAsErrors`; **98 of 98 tests**, the suite run whole (97 as before, plus the new guard
+below); the packed generator still carries `BuildVersion` in
+`analyzers/dotnet/cs/…SourceGenerators.dll`, read out of the `.nupkg`; `assert-packages` still sees
+exactly one id, and the package still has no `lib/`, which is step 3's job.
+
+**Decision 9's fix is in.** `Architecture/AssemblyQualityTests.cs` read
+`typeof(BuildVersion).Assembly`; it now anchors on `typeof(AssemblyInfoGenerator).Assembly` — the
+generator cannot move — and a new test, `The_assembly_under_test_is_the_generator`, asserts the
+simple name is `Bennewitz.Ninja.AutoVersioning.SourceGenerators`. That is the 98th test. Without it
+the failure mode is silent: a rule reading the wrong assembly finds nothing and passes.
+
+#### Four things step 2 needed that the plan does not mention
+
+⛔ **1. There is no solution file, and CI builds the root project and the test project by path.** A
+new project is therefore an orphan — `dotnet build` at the root would never compile it, and nothing
+would notice it breaking. The root csproj now carries a `ProjectReference` to it with
+`ReferenceOutputAssembly="false"` and `PrivateAssets="all"`: a build dependency that passes **no
+assembly**, so the analyzer gains no reference and no `CS0436` from the same types arriving as both
+source and reference. Confirmed by the build producing
+`Abstractions/bin/Release/netstandard2.0/…Abstractions.dll`.
+
+⚠ **How the second id gets PACKED is still open, and it is step 3's first problem.** `dotnet pack`
+at the root packs the root project alone, so step 3's "two ids" verification needs either a solution
+file or an explicit second pack — and `release.yml` and `ci.yml` came from the bbpkg template, so
+editing them here is drift from Bennewitz.Ninja.Templates rather than a local change.
+
+⛔ **2. A nested project's `obj\` is not excluded from the root glob.** `Abstractions\**` is now in
+`DefaultItemExcludes`, and the sources are linked back explicitly with
+`<Compile Include="Abstractions\Versioning\**\*.cs" />`. Without the exclusion the root project
+would compile `Abstractions\obj\…AssemblyInfo.cs` as well and fail with `CS0579`.
+
+⛔ **3. The friend-grant file is generated from every project's assembly name**, and `check` fails
+when it differs from what `grants` would write. `dotnet run --file scripts/repo-conventions.cs --
+grants` now writes three assemblies rather than two. `BNAQ1005` reads the grants compiled into the
+assembly, so a missed regeneration fails there too.
+
+📏 **4. `repo-conventions check` classifies the new project as role "other" and demanded net10.0 and
+an `AutoVersioning` reference.** Both are now exemptions in `.github/repository.json` under
+`props`:
+
+| Rule | Reason recorded |
+|---|---|
+| `AutoVersioning` | The same as the other two projects: this is AutoVersioning itself, and a package cannot generate its own build |
+| `TargetFramework` | **netstandard2.0 rather than the family's net10.0 — the maintainer's decision of 2026-11-19.** This package exists so a *consumer* can call `TryGetFromFile` at all, so reach is the point: netstandard2.0 covers .NET Framework 4.6.1+ and every modern .NET, while net10.0 would leave a consumer whose test project is on net8.0 still unable to call it. The sources are netstandard2.0-clean regardless, the analyzer compiling the same files |
+
+⚠ **That TFM is effectively permanent once the id is published**, which is why it was put to the
+maintainer rather than taken as an implementation detail. Multi-targeting `netstandard2.0;net10.0`
+was offered and declined: it would put two `lib/` folders in a hand-written nuspec and oblige step
+4's packaging test to assert both.
 
 ### Step 1, as built — the trim and the namespace
 

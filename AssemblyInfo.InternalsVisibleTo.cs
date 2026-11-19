@@ -11,5 +11,6 @@
 // no family assembly is strong-named. See docs/repository-conventions.md in
 // Bennewitz.Ninja.Templates.
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Bennewitz.Ninja.AutoVersioning.Abstractions")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Bennewitz.Ninja.AutoVersioning.SourceGenerators")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Bennewitz.Ninja.AutoVersioning.Tests")]

@@ -17,6 +17,10 @@
   "content": [],
   "undocumented": {},
   "props": {
+    "Bennewitz.Ninja.AutoVersioning.Abstractions": {
+      "AutoVersioning": "This is AutoVersioning itself: a package cannot generate its own build, and the tests exercise the generator through a ProjectReference.",
+      "TargetFramework": "netstandard2.0 rather than the family's net10.0, the maintainer's decision of 2026-11-19. This package exists so that a CONSUMER can call BuildVersion.TryGetFromFile at all (plans/00002), so its reach is the point: netstandard2.0 covers .NET Framework 4.6.1+ and every modern .NET, while net10.0 would leave a consumer whose test project is on net8.0 unable to call it. The sources are netstandard2.0-clean regardless, because the analyzer compiles the same files into itself."
+    },
     "Bennewitz.Ninja.AutoVersioning": {
       "AutoVersioning": "This is AutoVersioning itself: a package cannot generate its own build, and the tests exercise the generator through a ProjectReference."
     },

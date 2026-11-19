@@ -25,7 +25,37 @@ namespace Bennewitz.Ninja.AutoVersioning.Tests.Architecture;
 [TestClass]
 public sealed class AssemblyQualityTests
 {
-    private static readonly Assembly Shipped = typeof(BuildVersion).Assembly;
+    /// <summary>The assembly every rule below is meant to be reading.</summary>
+    private const string ShippedAssemblyName = "Bennewitz.Ninja.AutoVersioning.SourceGenerators";
+
+    /// <remarks>
+    /// ⛔ Anchored on <see cref="AssemblyInfoGenerator"/>, which cannot move: it IS the generator.
+    /// This read <c>typeof(BuildVersion).Assembly</c> until <c>plans/00002</c>, whose step 2 moved
+    /// <c>BuildVersion</c> into a second project that also ships it. Had the test project ever come
+    /// to reference that project, every rule here would have **silently retargeted to the wrong
+    /// assembly and kept passing** — the generator, the only thing a consumer's compiler loads,
+    /// would have stopped being tested while the suite stayed green. <c>plans/00002</c> decision 9.
+    /// <see cref="The_assembly_under_test_is_the_generator"/> is the assertion that says so out loud.
+    /// </remarks>
+    private static readonly Assembly Shipped = typeof(AssemblyInfoGenerator).Assembly;
+
+    /// <summary>
+    /// Not an AssemblyQuality rule: the guard that every rule below is reading the generator.
+    /// </summary>
+    /// <remarks>
+    /// A rule that inspects the wrong assembly reports nothing and passes, so the target is asserted
+    /// by name rather than trusted. Without this, the failure mode is a green suite that proves
+    /// nothing about the shipped analyzer.
+    /// </remarks>
+    [TestMethod]
+    public void The_assembly_under_test_is_the_generator()
+    {
+        Assert.AreEqual(
+            ShippedAssemblyName,
+            Shipped.GetName().Name,
+            "AssemblyQuality's rules here must read the generator — the assembly a consumer's "
+            + "compiler loads. Reading any other one makes every rule below vacuous.");
+    }
 
     /// <summary>
     /// BNAQ1005: every grant compiled into the assembly names an assembly the repository's two grant
