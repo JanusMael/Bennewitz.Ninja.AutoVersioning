@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A consumer of Bennewitz.Ninja.AutoVersioning.Abstractions, wired the way a real one is: by
+    PackageReference, restored from a local feed holding the .nupkg the test run just packed.
+
+    ⛔ It must NEVER reference the built .Abstractions.dll by path, the way the incremental
+    fixture references the generator with <Analyzer Include="..." />. The defect plans/00002
+    exists to fix is a PACKAGING defect - the code was always correct and only the package failed
+    to deliver it - so a test wired to the DLL would pass while proving nothing about the package.
+
+    The version is $(AbstractionsPackageVersion), set in the Directory.Build.props the test writes
+    beside this file. It is unique per run, so no earlier run's package can be served from the
+    NuGet cache in place of the one under test.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <!-- The only feed is a local directory, which serves no vulnerability data: auditing it
+         reports NU1905 and tells us nothing about this package. -->
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bennewitz.Ninja.AutoVersioning.Abstractions" Version="$(AbstractionsPackageVersion)" />
+  </ItemGroup>
+
+</Project>

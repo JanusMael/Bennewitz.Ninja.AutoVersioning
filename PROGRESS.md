@@ -506,7 +506,7 @@ maintainer-only questions were settled the same day and are in the decisions tab
 | 1 · The API trim and the namespace | **done** | Below |
 | 2 · The new project and the move | **done** | Below |
 | 3 · Packaging | **done** | Below |
-| 4 · A consumer test over the `.nupkg` | not started | |
+| 4 · A consumer test over the `.nupkg` | **done**; 111 of 111, and proven red | Below |
 | 5 · The documents | not started | |
 | 6 · Glob Patterns widened, and a preflight | **widening done** 2026-11-19; preflight not yet run | Below |
 | 7 · A release | not started | |
@@ -595,6 +595,52 @@ had only ever been **described** in its remarks:
 - **The relation is deliberately not transitive.** With a 3-minute tolerance 10:00≡10:03 and
   10:03≡10:06 but 10:00≢10:06 — asserted, so the warning against deduplicating by sorting is a test
   rather than a sentence.
+
+### Step 4, as built — a consumer really calls it
+
+`Tests/fixtures/consumer/` is a one-project consumer, and
+`Tests/…/Packaging/PackagedConsumerTests.cs` is the test the plan calls its whole point. One run:
+pack `.Abstractions` into a feed, copy the fixture out of the repository, restore it against that
+feed **alone**, build it with the generator loaded, run the built assembly, and compare the stamp it
+read back through `BuildVersion.TryGetFromFile` with the `AutoVersion` that same build derived.
+
+⛔ **It consumes the `.nupkg`, never the built DLL**, which is the plan's own prohibition and the
+reason the test can fail at all: the defect `plans/00002` exists to fix is a *packaging* defect, so a
+test wired the way `FixtureConsumer` wires the generator — `<Analyzer Include="…{the built dll}" />`
+— would have proved nothing. The fixture gets a `NuGet.config` whose `<clear />` drops every source
+the machine would otherwise contribute and leaves the packed directory as the only one, and a real
+`<PackageReference>`.
+
+**Proven red**, by packing with `-p:IncludeBuildOutput=false -p:NoWarn=NU5128`, which is what empties
+an SDK-packed library: the consumer failed to build with `CS0246 — The type or namespace name
+'BuildVersion' could not be found`, exactly the consumer-visible defect. ⭐ The restore still
+*succeeded* there: the package resolved and delivered nothing, which is the shape of the failure
+this whole plan is about.
+
+⭐ **And the comparison is not vacuous**, which any two-sided equality risks. Built once with
+`-p:BuildTimestamp=20260102030405`: the report read `2026.1.102.304` and the consumer read the same
+value back out of the assembly's Win32 version resource, so both sides follow a stamp the test chose
+rather than agreeing on whatever the clock gave.
+
+**Three details that are load-bearing, not housekeeping:**
+
+- ⚠ **The package version is unique per run and the restore gets its own packages folder**
+  (`globalPackagesFolder` in the written `NuGet.config`). A fixed version would let NuGet's global
+  cache serve an *earlier* run's package — one that still carried a `lib/` — in place of the one
+  under test, and the mutation above would have stayed green.
+- ⚠ **The built assembly is run directly, never through `dotnet run`.** A Release build takes a
+  fresh `BuildTimestamp` every time, so a rebuild would restamp the assembly and compare two
+  different builds.
+- The fixture also calls `FuzzyBuildVersionComparer`, which **nothing else proves a consumer can
+  reach**: its ten tests all call it from inside this repository, where it is reachable whether or
+  not the package exposes it.
+
+`FixtureConsumer`'s `RepositoryRoot`, `GeneratorAssembly` and `CopyDirectory` are `internal` rather
+than private now, and `PackagingTests.Pack` takes extra arguments, so there is one way to find the
+root and one way to pack rather than a second copy of each.
+
+**Cost:** the whole `Packaging/` folder runs in **3.6 s for all nine tests**, measured 2026-11-19 —
+the pack and the consumer round trip overlap. The suite is 111 of 111 in 72 s.
 
 ### Step 3, as built — packaging
 

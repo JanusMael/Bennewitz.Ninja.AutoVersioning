@@ -10,6 +10,7 @@ references the generator project as an ordinary library and calls its classes di
 | `BuildVersionTests.cs` | `BuildVersion` is identical under de-DE, th-TH, ar-SA, fa-IR and ja-JP, and `ToString()` is safe to embed |
 | `BuildVersionFromFileTests.cs` | `BuildVersion.TryGetFromFile` over real emitted assemblies with chosen file versions |
 | `Packaging/PackagingTests.cs` | Every packable project is in `packages.push` or `packages.local`, its id read where pack reads it (the root project's from `Package.nuspec`); no id is in both; `release.yml` globs nothing, resolves through `release-target.cs`, still pushes and releases, and keeps its credential preflight. Ported from the bbpkg template |
+| `Packaging/PackagedConsumerTests.cs` | That a **consumer** can call `BuildVersion.TryGetFromFile` at all: packs `.Abstractions` into a local feed, restores `fixtures/consumer` against that feed alone through a real `PackageReference`, builds it with the generator loaded, runs it, and compares the stamp it read back with the `AutoVersion` that same build derived. ⛔ It consumes the `.nupkg`, never the built DLL — `plans/00002` step 4 |
 | `Architecture/AssemblyQualityTests.cs` | AssemblyQuality's BNAQ1001, BNAQ1002, BNAQ1004 and BNAQ1005 over the compiled generator, each skipping nothing and, where it can, inspecting something; BNAQ1005: every compiled grant names an assembly the two grant files at the root allow. BNAQ1002 inspects nothing until the generator references a namespace to keep inside it. Ported from the bbpkg template |
 | `Incremental/FixtureConsumer.cs` | Not a test: the harness the three below share. Copies `fixtures/incremental` outside the repository, renames the `.template` suffixes away, writes the two files NuGet would import, and runs or evaluates it. `Run` / `Build` build it; `Evaluate` and `EvaluateMany` read properties with `-getProperty`, which runs no target; `ReadCompileDecisions` reads each project's `CoreCompile` decision out of a detailed log; `ReadReportedValue` reads a `FIXTURE-*` report, throwing rather than returning empty when it is missing |
 | `Incremental/IncrementalBuildTests.cs` | That a Debug build holds `BuildTimestamp` to its day and so compiles nothing when nothing changed, counted as MSBuild's own `CoreCompile` decisions; and what `Configuration` reaches the package props for each verb without `-c` |
@@ -19,7 +20,9 @@ references the generator project as an ordinary library and calls its classes di
 ⛔ **The `Incremental/` tests build a real consuming project**, which is the only way to exercise
 `Build.props` and `Build.targets` at all: what they assert lives in the order MSBuild evaluates files
 in, and no unit test can see that. They spawn `dotnet` repeatedly, so they are most of the suite's
-wall time — roughly three seconds of it is everything else. Nothing here still runs
+wall time. The rest is `Packaging/`, which spawns `dotnet` too — a pack, and for
+`PackagedConsumerTests` a pack, a restore, a build and a run — at **3.6 s for all nine of them
+together**, measured 2026-11-19; everything else is about three seconds. Nothing here still runs
 `AssemblyInfoGenerator` through a Roslyn generator driver; the fixture's own compiler loads it, as a
 consumer's would.
 

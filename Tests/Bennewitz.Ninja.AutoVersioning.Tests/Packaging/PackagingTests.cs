@@ -276,7 +276,12 @@ public sealed class PackagingTests
     }
 
     /// <summary>Runs <c>dotnet pack</c> over one project into one directory, and returns its output.</summary>
-    private static string Pack(string project, string output)
+    /// <remarks>
+    /// <c>internal</c> because <c>PackagedConsumerTests</c> packs through it too, with a version of
+    /// its own. Two ways to pack the same project in one test assembly is two places for a packing
+    /// argument to be forgotten.
+    /// </remarks>
+    internal static string Pack(string project, string output, params string[] extraArguments)
     {
         ProcessStartInfo startInfo = new("dotnet")
         {
@@ -286,7 +291,7 @@ public sealed class PackagingTests
             WorkingDirectory = Path.GetDirectoryName(project)!,
         };
 
-        foreach (string argument in new[] { "pack", project, "-c", "Release", "--nologo", "--output", output })
+        foreach (string argument in new[] { "pack", project, "-c", "Release", "--nologo", "--output", output }.Concat(extraArguments))
         {
             startInfo.ArgumentList.Add(argument);
         }

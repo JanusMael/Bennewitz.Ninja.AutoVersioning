@@ -263,7 +263,13 @@ internal sealed class FixtureConsumer : IDisposable
     }
 
     /// <summary>Walks up from the test assembly until the generator's own project file appears.</summary>
-    private static string RepositoryRoot
+    /// <remarks>
+    /// <c>internal</c> rather than private because <c>Packaging/PackagedConsumerTests.cs</c> builds
+    /// its own fixture and needs the same three things this class needs: the repository root, the
+    /// generator assembly, and a directory copy. A third walk up the tree is a third thing to get
+    /// wrong when the layout moves.
+    /// </remarks>
+    internal static string RepositoryRoot
     {
         get
         {
@@ -284,7 +290,7 @@ internal sealed class FixtureConsumer : IDisposable
     }
 
     /// <summary>The generator this test run built, loaded by the fixture's compiler as a consumer would.</summary>
-    private static string GeneratorAssembly =>
+    internal static string GeneratorAssembly =>
         typeof(AssemblyInfoGenerator).Assembly.Location;
 
     private static string DirectoryBuildProps() =>
@@ -327,7 +333,7 @@ internal sealed class FixtureConsumer : IDisposable
         </Project>
         """;
 
-    private static void CopyDirectory(string source, string destination)
+    internal static void CopyDirectory(string source, string destination)
     {
         Directory.CreateDirectory(destination);
 
