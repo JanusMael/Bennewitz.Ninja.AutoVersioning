@@ -134,10 +134,18 @@ jobs:
         run: dotnet test Tests/Bennewitz.Ninja.AutoVersioning.Tests/Bennewitz.Ninja.AutoVersioning.Tests.csproj -c Release
 
       # This repository declares no families, so release-target.cs refuses a <family>/v tag before
-      # anything is built, and the release packs the root project alone.
+      # anything is built.
+      #
+      # ⛔ Every packable project is named here, and the two ids take the SAME $VERSION. There is no
+      # solution file, so a bare `dotnet pack` would bind to the root project alone and the release
+      # would push an id it never packed — the push names each id from packages.push, so the run
+      # would fail on a file that does not exist, after the first id had already published
+      # permanently. Adding a project to packages.push means adding its pack line here.
       - name: Pack
         if: env.RELEASING == 'true'
-        run: dotnet pack Bennewitz.Ninja.AutoVersioning.csproj -c Release --no-build --nologo -p:Version="$VERSION" --output ./packages/Release
+        run: |
+          dotnet pack Bennewitz.Ninja.AutoVersioning.csproj -c Release --no-build --nologo -p:Version="$VERSION" --output ./packages/Release
+          dotnet pack Abstractions/Bennewitz.Ninja.AutoVersioning.Abstractions.csproj -c Release --no-build --nologo -p:Version="$VERSION" --output ./packages/Release
 
       # ⛔ The last gate before anything becomes permanent. PackagingTests already checked the
       # project files; this checks what pack ACTUALLY produced, reading each id from the <id>

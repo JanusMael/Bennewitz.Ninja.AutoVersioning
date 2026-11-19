@@ -500,7 +500,7 @@ maintainer-only questions were settled the same day and are in the decisions tab
 | 0 · Read the policy's Glob Patterns | **done** — and it needs widening | Below |
 | 1 · The API trim and the namespace | **done** | Below |
 | 2 · The new project and the move | **done** | Below |
-| 3 · Packaging | not started | |
+| 3 · Packaging | **done** | Below |
 | 4 · A consumer test over the `.nupkg` | not started | |
 | 5 · The documents | not started | |
 | 6 · Glob Patterns widened, and a preflight | **blocked on the maintainer** | |
@@ -528,6 +528,54 @@ repository's existing refusal to push a `*.nupkg` glob.
 ⚠ **Still unread, and needed before step 6:** the same policy's **Scopes**. `.Abstractions` is a
 *new* id, so the policy must carry **Publish new packages**, not only *Publish new versions of
 existing packages*. `docs/publishing.md` already states this; nobody has confirmed the live value.
+
+### Step 3, as built — packaging
+
+Two ids now pack, both declared: `assert-packages` over a fresh directory reports
+`2 packed, all declared in packages.push or packages.local` and both READMEs linking absolutely.
+
+**`.Abstractions` packs the SDK's way, with no `NuspecFile`** — a deviation from the generator,
+which needs one only because its layout is unusual. An ordinary library's default
+`lib\netstandard2.0` placement is already right, and a hand-written file list is one more thing to
+get wrong. The packed result is exactly three files: the nuspec, `README.md`, and
+`lib/netstandard2.0/Bennewitz.Ninja.AutoVersioning.Abstractions.dll`. Its dependency group is
+**empty**, so the private analyzers in `Directory.Build.props` do not leak into it.
+
+**Its own README**, decision 12, written in this step rather than step 5 because packing needs the
+file to exist. It describes a library — `TryGetFromFile`, the four integer parts, the midnight
+behaviours — and links only absolutely.
+
+#### How a second id gets packed, which step 2 left open
+
+⛔ **Each packable project is NAMED, in `ci.yml`, `release.yml` and `Pack.ps1`.** There is no
+solution file and none was added: `release.yml` **already named the root project**
+(`dotnet pack Bennewitz.Ninja.AutoVersioning.csproj …`), so these workflows are repo-specific
+already, not byte-identical template copies, and a second pack line is an ordinary local edit rather
+than drift from Bennewitz.Ninja.Templates. `ci.yml`'s bare `dotnet pack` now names both too.
+
+⚠ **In `release.yml` the failure mode of forgetting one is the expensive one**: the push names each
+id from `packages.push`, so a declared-but-unpacked id fails the run on a missing file — *after* the
+first id has published permanently. The comment at that step says so.
+
+#### Two defects found in the guards themselves
+
+⛔ **`PackagingTests.PackableIds()` could not see the new project at all.** It enumerated
+`*.csproj` at the root and one level under `Tests/` — its own summary claimed that was "every
+project this repository has", which step 2 made false. The test exists to catch an unclassified
+packable project, and it was **blind** to the one just added: its "fails closed" design is defeated
+by discovery, not by the flag. It now also sweeps every directory one level below the root. One
+level only, never a recursive walk — a `.csproj` never lives in `bin/` or `obj/`.
+
+📏 **The new content test was proven red two ways, and one of them taught something better.** The
+plan asks for a case that goes red when `lib/netstandard2.0` is removed:
+
+| Mutation | Result |
+|---|---|
+| `<IncludeBuildOutput>false</IncludeBuildOutput>` | **`dotnet pack` itself fails**, `NU5128` — *"Add lib or ref assemblies for the netstandard2.0 target framework"* — escalated to an error by `TreatWarningsAsErrors`. ⭐ So a `lib`-less package **cannot be produced here at all**, which is a stronger guarantee than the test |
+| `PackageReadmeFile` and the `None Include` removed | Packs **cleanly**, and the test fails with its own message. ⛔ `assert-packages` would have passed that package in silence, its link check being guarded by `r.Readme is not null` |
+
+The README half is therefore the half that was reachable, and it is the half that matters: a
+README-less package is a blank page on nuget.org that every other gate accepts.
 
 ### Step 2, as built — the new project and the move
 

@@ -10,3 +10,4 @@
 # work: the first id publishes permanently and the rest are rejected 403 in the same command.
 
 Bennewitz.Ninja.AutoVersioning
+Bennewitz.Ninja.AutoVersioning.Abstractions

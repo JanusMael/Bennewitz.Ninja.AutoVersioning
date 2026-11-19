@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -164,10 +166,115 @@ public sealed class PackagingTests
     }
 
     /// <summary>
-    /// Package ids of every packable project, read from the project files rather than from packed
-    /// output, so the guard runs before anything has been packed: the projects at the root and one
-    /// level under <c>Tests/</c>, which is every project this repository has.
+    /// The <c>.Abstractions</c> package really contains <c>lib/netstandard2.0/…dll</c> and its
+    /// README — read out of a <c>.nupkg</c> this test packs, not inferred from the project file.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>Nothing else in this repository reads package CONTENTS.</b> <c>assert-packages</c>
+    /// checks ids and README links; every other test here reads project files. So a
+    /// <c>.Abstractions</c> that shipped an empty package — no <c>lib/</c>, nothing for a consumer
+    /// to compile against — would pass every existing gate, and the defect would be exactly the one
+    /// <c>plans/00002</c> exists to fix: the code correct, the package failing to deliver it.
+    /// </para>
+    /// <para>
+    /// ⚠ It packs rather than reading <c>packages/</c>, which is gitignored and may hold a stale
+    /// package from any earlier run. The plan asks this to go red when <c>lib/netstandard2.0</c> is
+    /// removed; with SDK packing the equivalent mutation is
+    /// <c>&lt;IncludeBuildOutput&gt;false&lt;/IncludeBuildOutput&gt;</c>, which is what the
+    /// generator sets and what would silently empty this package.
+    /// </para>
+    /// <para>
+    /// ⚠ The README assertion is not decoration: <c>assert-packages</c> guards its absolute-link
+    /// check with <c>r.Readme is not null</c>, so a package carrying no README at all passes it in
+    /// silence and reaches nuget.org as a blank page.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void The_abstractions_package_carries_a_lib_and_a_readme()
+    {
+        string root = RepoRoot();
+        string project = Path.Combine(root, "Abstractions", "Bennewitz.Ninja.AutoVersioning.Abstractions.csproj");
+        Assert.IsTrue(File.Exists(project), $"The .Abstractions project is not at '{project}'.");
+
+        string output = Path.Combine(
+            Path.GetTempPath(),
+            "bnav-pack-" + Guid.NewGuid().ToString("N")[..8]);
+
+        try
+        {
+            string log = Pack(project, output);
+
+            string[] packages = Directory.GetFiles(output, "*.nupkg");
+            Assert.AreEqual(1, packages.Length, $"Expected exactly one .nupkg in '{output}'. dotnet pack said:{Environment.NewLine}{log}");
+
+            using ZipArchive archive = ZipFile.OpenRead(packages[0]);
+            string[] entries = [.. archive.Entries.Select(entry => entry.FullName.Replace('\\', '/'))];
+
+            Assert.IsTrue(
+                entries.Any(entry => entry.Equals(
+                    "lib/netstandard2.0/Bennewitz.Ninja.AutoVersioning.Abstractions.dll",
+                    StringComparison.OrdinalIgnoreCase)),
+                "The .Abstractions package carries no lib/netstandard2.0 assembly, so a consumer "
+                + "referencing it can compile against nothing — which is the defect plans/00002 "
+                + "exists to fix. It contains: " + string.Join(", ", entries));
+
+            Assert.IsTrue(
+                entries.Any(entry => entry.Equals("README.md", StringComparison.OrdinalIgnoreCase)),
+                "The .Abstractions package carries no README, so its nuget.org page would be blank "
+                + "— and assert-packages would not say so, its link check being guarded by "
+                + "`r.Readme is not null`. It contains: " + string.Join(", ", entries));
+        }
+        finally
+        {
+            if (Directory.Exists(output))
+            {
+                Directory.Delete(output, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>Runs <c>dotnet pack</c> over one project into one directory, and returns its output.</summary>
+    private static string Pack(string project, string output)
+    {
+        ProcessStartInfo startInfo = new("dotnet")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            WorkingDirectory = Path.GetDirectoryName(project)!,
+        };
+
+        foreach (string argument in new[] { "pack", project, "-c", "Release", "--nologo", "--output", output })
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("dotnet pack did not start.");
+
+        string standardOutput = process.StandardOutput.ReadToEnd();
+        string standardError = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        string log = standardOutput + Environment.NewLine + standardError;
+        Assert.AreEqual(0, process.ExitCode, $"dotnet pack failed:{Environment.NewLine}{log}");
+        return log;
+    }
+
+    /// <summary>
+    /// Package ids of every packable project, read from the project files rather than from packed
+    /// output, so the guard runs before anything has been packed: the projects at the root, in each
+    /// directory one level below it, and one level under <c>Tests/</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>The discovery is the guard.</b> This read only the root and <c>Tests/</c> until
+    /// <c>plans/00002</c> step 2 put a second packable project in <c>Abstractions/</c> — which it
+    /// then could not see, so the test that exists to catch an unclassified packable project would
+    /// have passed while being blind to one. A project the enumeration misses is not "fails
+    /// closed"; it is not judged at all. Directories one level down are now swept, which is where a
+    /// project in this flat layout goes.
+    /// </remarks>
     /// <remarks>
     /// ⚠ <c>PackageId</c> falls back to <c>AssemblyName</c> and then the project file name when it
     /// is not set, which is how a project acquires an id nobody chose. Mirrored here so an
@@ -180,8 +287,12 @@ public sealed class PackagingTests
         string tests = Path.Combine(root, "Tests");
         HashSet<string> ids = [];
 
+        // One level only, never a recursive walk: a .csproj never appears inside bin/ or obj/, and
+        // sweeping the whole tree would read the build output and any worktree beneath it.
         IEnumerable<string> projects = Directory.EnumerateFiles(root, "*.csproj")
-            .Concat(Directory.EnumerateDirectories(tests).SelectMany(folder => Directory.EnumerateFiles(folder, "*.csproj")));
+            .Concat(Directory.EnumerateDirectories(root).SelectMany(folder => Directory.EnumerateFiles(folder, "*.csproj")))
+            .Concat(Directory.EnumerateDirectories(tests).SelectMany(folder => Directory.EnumerateFiles(folder, "*.csproj")))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
 
         foreach (string project in projects)
         {

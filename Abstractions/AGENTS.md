@@ -22,14 +22,23 @@ and drift are in [`PROGRESS.md`](../PROGRESS.md).
 | The namespace here is `Bennewitz.Ninja.AutoVersioning`, never `…SourceGenerators` | A consumer would write `using …SourceGenerators;` to read a version number, from a package called `.Abstractions`. **Permanent after publication.** `plans/00002` decision 11 | `Versioning/AGENTS.md`; nothing automated |
 | Anything `public` here is a supported API the moment this ships | `plans/00002` decision 8 trimmed three members for exactly this reason, before the id existed | `Versioning/AGENTS.md`'s trim table |
 
-## State
+## Packaging
 
-**Not yet packable.** `IsPackable` is `false` until `plans/00002` step 3 adds the nuspec and the id
-to `packages.push`: `scripts/assert-packages.cs` fails the build on a packed id declared in neither
-list. ⛔ Flip `IsPackable`, add the nuspec and add the id **in one change**, never separately.
+Packs **the SDK's way, with no `NuspecFile`** — unlike the generator, whose layout is unusual (one
+DLL into `analyzers\dotnet\cs`, no `lib\`) and which therefore needs a hand-written file list. This
+is an ordinary library, so the default `lib\netstandard2.0` placement is already right.
 
-⚠ **There is no solution file in this repository**, and CI builds the root project and the test
-project by path. This project is built only because the root csproj carries a `ProjectReference` to
-it with `ReferenceOutputAssembly="false"` — a build dependency that passes no assembly. Remove that
-and nothing in CI compiles this project at all. How it is to be **packed** is step 3's question, and
-`dotnet pack` at the root packs the root project alone.
+| Rule | Why | Guarded by |
+|---|---|---|
+| ⛔ **`IsPackable`, the package metadata and the id in `packages.push` change together** | `scripts/assert-packages.cs` fails the build on a packed id declared in neither list, and a declared id that does not pack fails the release on a missing file | `assert-packages` in CI's `build` job; `PackagingTests` |
+| ⛔ **Every packable project is NAMED in `ci.yml`, `release.yml` and `Pack.ps1`** | **There is no solution file.** A bare `dotnet pack` binds to the root project alone, so a project not named simply never packs — and in `release.yml` that means pushing an id that was never built, *after* the first id has published permanently | `PackagingTests`; the comments at each pack step |
+| ⛔ **It is compiled only via the root csproj's `ProjectReference` with `ReferenceOutputAssembly="false"`** | CI builds the root and test projects by path. Remove that and nothing compiles this project, which would break silently while every check stayed green | The `ProjectReference` and its comment in the root csproj |
+| It carries its own `README.md` | `plans/00002` decision 12. ⚠ A package carrying **no** README passes `assert-packages` silently, its link check being guarded by `r.Readme is not null` | `PackagingTests.The_abstractions_package_carries_a_lib_and_a_readme` |
+| `developmentDependency` is **not** set | Unlike the analyzer, this is a library a consumer compiles against, so the reference must flow | Nothing automated |
+
+⭐ **A `lib`-less package cannot be produced here at all**, which is stronger than the test that
+checks for one: with SDK packing, emptying the package raises `NU5128` (*"Add lib or ref assemblies
+for the netstandard2.0 target framework"*), and `TreatWarningsAsErrors` in the root
+`Directory.Build.props` turns that into a build error. The test remains because it reads the
+`.nupkg` rather than the project, and because the README half of it **is** reachable: a
+README-less package packs perfectly well.

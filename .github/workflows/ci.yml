@@ -24,8 +24,13 @@ jobs:
         run: dotnet test Tests/Bennewitz.Ninja.AutoVersioning.Tests/Bennewitz.Ninja.AutoVersioning.Tests.csproj -c Release
       # The release's last gate before its push, run here too, so a package that packs without
       # being declared in packages.push or packages.local fails a pull request rather than a tag.
+      # ⛔ Each project is named. There is no solution file here, so a bare `dotnet pack` binds to
+      # the root project alone and the second id would never be packed — and so never checked by
+      # the gate below, which is the whole point of running it here.
       - name: Pack
-        run: dotnet pack -c Release --no-build --nologo --output ./packages/Release
+        run: |
+          dotnet pack Bennewitz.Ninja.AutoVersioning.csproj -c Release --no-build --nologo --output ./packages/Release
+          dotnet pack Abstractions/Bennewitz.Ninja.AutoVersioning.Abstractions.csproj -c Release --no-build --nologo --output ./packages/Release
       - name: Assert packed matches declared
         run: dotnet run --file scripts/assert-packages.cs -- ./packages/Release
 

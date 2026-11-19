@@ -57,6 +57,17 @@ if (-not (Test-Path $CsprojPath)) {
     exit 1
 }
 
+# ⛔ Every packable project is named. There is no solution file here, so nothing is inherited from a
+# glob: a project added to packages.push and not added here simply never packs locally, and the
+# mismatch shows up only in CI or, worse, in a release.
+$AbstractionsPath = Join-Path $OutputDirectory "Abstractions\Bennewitz.Ninja.AutoVersioning.Abstractions.csproj"
+if (-not (Test-Path $AbstractionsPath)) {
+    Write-Error "Expected project at '$AbstractionsPath' — make sure OutputDirectory points to the repository root."
+    exit 1
+}
+
+$PackableProjects = @($CsprojPath, $AbstractionsPath)
+
 # ─── Build and Pack ───────────────────────────────────────────────────────────
 
 foreach ($config in @("Debug", "Release")) {
@@ -73,11 +84,14 @@ foreach ($config in @("Debug", "Release")) {
     dotnet build $CsprojPath -c $config --nologo /p:Version=$Version
     if ($LASTEXITCODE -ne 0) { Write-Error "dotnet build failed ($config)."; exit 1 }
 
-    Write-Host "[$config] Packing v$Version..." -ForegroundColor Cyan
-    dotnet pack $CsprojPath -c $config --no-build --nologo `
-        /p:Version=$Version `
-        --output $configPackageDir
-    if ($LASTEXITCODE -ne 0) { Write-Error "dotnet pack failed ($config)."; exit 1 }
+    foreach ($project in $PackableProjects) {
+        $name = [System.IO.Path]::GetFileNameWithoutExtension($project)
+        Write-Host "[$config] Packing $name v$Version..." -ForegroundColor Cyan
+        dotnet pack $project -c $config --no-build --nologo `
+            -p:Version=$Version `
+            --output $configPackageDir
+        if ($LASTEXITCODE -ne 0) { Write-Error "dotnet pack failed ($config, $name)."; exit 1 }
+    }
 }
 
 # ─── Summary ──────────────────────────────────────────────────────────────────

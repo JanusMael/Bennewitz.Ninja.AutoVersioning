@@ -29,11 +29,41 @@
     <RootNamespace>Bennewitz.Ninja.AutoVersioning</RootNamespace>
 
     <!--
-      Packing is plans/00002 step 3, not this step: the id is not yet in packages.push, and
-      scripts/assert-packages.cs fails the build on a packed id declared in neither list. ⛔ Flip
-      this with the nuspec and packages.push in the same change, never on its own.
+      Packaging. ⛔ IsPackable, the id in packages.push and this metadata were added in ONE change
+      (plans/00002 step 3): scripts/assert-packages.cs fails the build on a packed id declared in
+      neither packages.push nor packages.local, so flipping one without the other breaks the build.
+
+      Unlike the generator this project packs the SDK's way, with no NuspecFile. The generator needs
+      one because its layout is unusual — a single DLL into analyzers\dotnet\cs and no lib\. This is
+      an ordinary library, so the default lib\netstandard2.0 placement is exactly right, and a
+      hand-written file list is one more thing to get wrong.
     -->
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackageId>Bennewitz.Ninja.AutoVersioning.Abstractions</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Brian Bennewitz</Authors>
+    <Description>Read a Bennewitz.Ninja.AutoVersioning CalVer stamp back off a built assembly: BuildVersion.TryGetFromFile.</Description>
+    <Copyright>Copyright © 2026 Brian Bennewitz</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>assembly-info versioning calver csharp dotnet</PackageTags>
+    <PackageProjectUrl>https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!--
+      ⛔ Its own README, plans/00002 decision 12 — NOT the repository's, which opens with analyzer
+      setup a consumer of this library never uses. ⚠ A package carrying no README at all passes
+      scripts/assert-packages.cs silently: its absolute-link check is guarded by
+      `r.Readme is not null`. PackagingTests asserts this one is really in the .nupkg.
+    -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- developmentDependency is deliberately NOT set: unlike the analyzer, this is a library a
+         consumer compiles against, so it must flow as an ordinary reference. -->
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
