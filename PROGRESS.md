@@ -460,6 +460,11 @@ checklist is where someone cutting a release actually looks, which is the whole 
 | `plans/00002`'s namespace for the moved types — **permanent after publication** | **`Bennewitz.Ninja.AutoVersioning`**, matching the package family a consumer installs, rather than leaving `…SourceGenerators` (which would have a consumer write `using …SourceGenerators;` to read a version number out of a package called `.Abstractions`) or `…AutoVersioning.Versioning` (a segment implying a sub-area of three types). Mechanical, and it lands in step 1 beside the API trim so step 2's move stays a pure move. `plans/00002` decision 11 |
 | `.Abstractions`' README | **Its own**, not shared. The two packages have different audiences, and a shared README would open the library's nuget.org page with `CompilerVisibleProperty`, `Directory.Build.props` and the `BNAV` diagnostics. A shared README was not available as a middle path anyway: it needs a declared family in `.github/repository.json`, which also changes the release tag shape to `<family>/v…`. `plans/00002` decision 12 |
 | Whether to measure a large parallel solution | **Measure it**, rather than leave the document's opening premise resting on nothing. ⛔ **It overturned the previous correction.** See *The large solution, measured* below |
+| `.Abstractions`' target framework | **netstandard2.0**, not the family's net10.0. Exempted in `.github/repository.json` with its reason. Reach is the point of the package; multi-targeting was offered and declined. See *Step 2, as built* |
+| The trusted-publishing policy's Glob Patterns | **Widened by the maintainer to the wildcard `Bennewitz.Ninja.AutoVersioning*`**, 2026-11-19, which covers both ids. ⛔ Step 6's widening is therefore **done** — and it was the one gate nothing could verify, since a preflight's token exchange happens before any id is considered |
+| The wildcard's latent hazard | **A tripwire test, not a narrower policy.** `packages.local` must stay empty while the policy is a wildcard, and `PackagingTests.While_the_policy_is_a_wildcard_no_id_is_private` fails the build if an id appears there. Proven to fire |
+| `FuzzyBuildVersionComparer` | **Restored as `public` in `.Abstractions`**, with the hashing tooling kept `internal`. Reverses part of decision 8; see *Drift from decision 8* below |
+| `Hashing/`, left with no compiling caller by step 1 | **Resolved by the above rather than decided**: it moved into `.Abstractions`, and the restored comparer is its caller again |
 
 ⛔ **Verified while settling the README decision: a package carrying NO README passes the link check
 silently.** `scripts/assert-packages.cs` guards it with `r.Readme is not null`, so omitting
@@ -503,8 +508,31 @@ maintainer-only questions were settled the same day and are in the decisions tab
 | 3 · Packaging | **done** | Below |
 | 4 · A consumer test over the `.nupkg` | not started | |
 | 5 · The documents | not started | |
-| 6 · Glob Patterns widened, and a preflight | **blocked on the maintainer** | |
+| 6 · Glob Patterns widened, and a preflight | **widening done** 2026-11-19; preflight not yet run | Below |
 | 7 · A release | not started | |
+
+### Step 6, half done — the policy is widened
+
+⛔ **The maintainer widened the policy to `Bennewitz.Ninja.AutoVersioning*` on 2026-11-19.** That
+wildcard covers both ids, so the coverage gap step 0 found is closed — **and it was the one gate in
+this plan that nothing could verify.** `docs/publishing.md`: *"A green preflight proves the login
+works, not that the policy covers every id. The exchange succeeds before any package id is
+considered, so nothing in a preflight can detect a coverage gap. Only the push can, and by then part
+of the release is permanent."*
+
+⚠ **A wildcard carries a hazard the repository had already written down.** `packages.local` states
+that the policy's pattern must match **nothing** in that file, and a wildcard over the shared prefix
+matches any private id by construction — so the first one added would be published permanently by
+the next release. That is the `Bennewitz.Ninja.DiffView` near-miss that file exists to prevent.
+
+📏 **The maintainer chose a tripwire over narrowing the policy.**
+`PackagingTests.While_the_policy_is_a_wildcard_no_id_is_private` fails the build the moment
+`packages.local` stops being empty, naming the wildcard, the consequence and the remedy. Proven to
+fire by adding an id and watching it fail. `packages.local`'s own comment now says the same.
+⛔ **If it ever fails, narrow the policy — do not delete the test.**
+
+**Not done:** the blank-`version` dispatch preflight. It cannot detect coverage, but it does prove
+the login still works and prints the ids a tag would publish, now two.
 
 ### Step 0, as read — the pattern does not cover the second id
 
@@ -528,6 +556,45 @@ repository's existing refusal to push a `*.nupkg` glob.
 ⚠ **Still unread, and needed before step 6:** the same policy's **Scopes**. `.Abstractions` is a
 *new* id, so the policy must carry **Publish new packages**, not only *Publish new versions of
 existing packages*. `docs/publishing.md` already states this; nobody has confirmed the live value.
+
+### Drift from decision 8 — `FuzzyBuildVersionComparer` is restored, and public
+
+⛔ **The maintainer reversed part of `plans/00002` decision 8 on 2026-11-19.** The plan is approved
+and frozen, so it is **not edited**; this is the record.
+
+Decision 8 had three unused public members trimmed before the id was published, and step 1 deleted
+the comparer under it. Asked why, the reasoning held — unused, and the only thing in `Versioning/`
+depending on the rest of the generator — but the maintainer's call is that the type is **wanted as
+public API**, with the hashing tooling behind it kept `internal`.
+
+| Member | Decision 8 | Now |
+|---|---|---|
+| `DateTimeOffsetExtensions.GetQuarter` | `internal` | `internal`, unchanged |
+| `BuildVersion.Generate(UInt16, UInt16)` | `internal` | `internal`, unchanged |
+| `FuzzyBuildVersionComparer` | deleted | **restored, `public`** — a supported API of `.Abstractions` |
+| `HashCodeUtility` | not in the decision | **`public` → `internal`** |
+
+**`Hashing/` moved to `Abstractions/Hashing/`** and was renamespaced to
+`Bennewitz.Ninja.AutoVersioning`, the same treatment `Versioning/` got, with the generator linking
+its sources back. That is what lets the public comparer keep its `GetHashCode` while the machinery
+stays unpublished. ⭐ It also dissolves the dead-code finding step 1 created: `Hashing/` has a
+compiling caller again, so the open question about deleting it is closed by not arising.
+
+⚠ **It carries no dependency with it.** `Hashing/` uses only BCL types — the one mention of
+`HashCode.Combine` is in a comment — so `.Abstractions` still packs with an **empty dependency
+group**. Checked before the move, not after.
+
+📏 **A public API with no test is a defect here, so it has ten now.** The comparer's rule row read
+*"Guarded by: Nothing automated"*, which was tolerable for unused internal code and is not for
+something a consumer can depend on. `FuzzyBuildVersionComparerTests` asserts the two subtleties that
+had only ever been **described** in its remarks:
+
+- **The `HHmm` revision is not a linear scale.** 09:59 and 10:00 are one minute apart while the
+  integers 959 and 1000 are 41 apart. **Proven red** by returning the revision undecoded: exactly
+  one test failed, `TheRevisionIsDecodedFromHHmm_NotComparedAsAnInteger`.
+- **The relation is deliberately not transitive.** With a 3-minute tolerance 10:00≡10:03 and
+  10:03≡10:06 but 10:00≢10:06 — asserted, so the warning against deduplicating by sorting is a test
+  rather than a sentence.
 
 ### Step 3, as built — packaging
 

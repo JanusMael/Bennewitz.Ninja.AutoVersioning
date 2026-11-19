@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
+namespace Bennewitz.Ninja.AutoVersioning;
 
 /// <remarks>
 /// Ported from the original with one change: the two GetCompositeDeterministicHashCode overloads
@@ -13,7 +13,14 @@ namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
 /// </remarks>
 [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
 [SuppressMessage("ReSharper", "ConditionalAccessQualifierIsNonNullableAccordingToAPIContract")]
-public static class HashCodeUtility
+/// <remarks>
+/// ⛔ <c>internal</c> deliberately, the maintainer's decision of 2026-11-19: the comparer that uses
+/// it is a supported API of <c>Bennewitz.Ninja.AutoVersioning.Abstractions</c>, but the hashing
+/// tooling behind it is not. ⚠ Its hash codes are for in-memory use only — <c>IntToByteUnion</c>
+/// assumes a little-endian machine, so the values are not portable and must never be persisted or
+/// compared across processes.
+/// </remarks>
+internal static class HashCodeUtility
 {
     /// <remarks>
     /// Takes advantage of a struct to convert the into into bytes. The byte fields and int fields will be stored in the same

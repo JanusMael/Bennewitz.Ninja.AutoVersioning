@@ -11,3 +11,11 @@
 # permanently on the first release.
 #
 # Empty is the normal state. Add an id only when you mean it.
+#
+# ⛔ AND RIGHT NOW IT MUST STAY EMPTY. The nuget.org trusted-publishing policy matches this
+# repository with the WILDCARD `Bennewitz.Ninja.AutoVersioning*` (maintainer's choice, 2026-11-19),
+# which by construction matches anything added here — so a private id listed below would be
+# published PERMANENTLY by the next release, which is the exact accident this file exists to
+# prevent. `PackagingTests.While_the_policy_is_a_wildcard_no_id_is_private` fails the build if one
+# appears. To add a private id, first narrow the policy to one exact pattern per id in
+# packages.push, then retire that test.

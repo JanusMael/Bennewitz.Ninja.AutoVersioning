@@ -58,6 +58,7 @@
   -->
   <ItemGroup>
     <Compile Include="Abstractions\Versioning\**\*.cs" />
+    <Compile Include="Abstractions\Hashing\**\*.cs" />
     <ProjectReference Include="Abstractions\Bennewitz.Ninja.AutoVersioning.Abstractions.csproj"
                       ReferenceOutputAssembly="false"
                       PrivateAssets="all" />

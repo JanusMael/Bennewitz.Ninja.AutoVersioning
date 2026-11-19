@@ -166,6 +166,47 @@ public sealed class PackagingTests
     }
 
     /// <summary>
+    /// ⛔ A tripwire, not an invariant: while the nuget.org trusted-publishing policy matches this
+    /// repository's ids with the <b>wildcard</b> <c>Bennewitz.Ninja.AutoVersioning*</c>,
+    /// <c>packages.local</c> must stay empty.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>packages.local</c> exists to hold ids that pack but must never be published, and its own
+    /// comment states the rule this guards: <i>"the trusted-publishing policy's glob pattern must
+    /// NOT match anything in this file"</i>. A wildcard over the shared prefix matches any such id
+    /// by construction, so the first private id added under it would be <b>published permanently</b>
+    /// on the next release — the <c>Bennewitz.Ninja.DiffView</c> near-miss that file was written
+    /// about.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Nothing in this repository can read the policy</b>, so without this the hazard is
+    /// invisible from here and would surface only as a permanent publish. The maintainer chose the
+    /// wildcard on 2026-11-19 with this tripwire in place of narrowing it.
+    /// </para>
+    /// <para>
+    /// <b>If this fails, do not delete it.</b> Narrow the policy at
+    /// <c>https://www.nuget.org/account/trustedpublishing</c> to one exact pattern per id in
+    /// <c>packages.push</c>, then replace this test with a note recording that it is no longer
+    /// needed.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void While_the_policy_is_a_wildcard_no_id_is_private()
+    {
+        string[] local = [.. Ids("packages.local").Order()];
+
+        Assert.AreEqual(
+            0,
+            local.Length,
+            "packages.local declares " + string.Join(", ", local) + ", but the trusted-publishing "
+            + "policy matches this repository with the wildcard 'Bennewitz.Ninja.AutoVersioning*', "
+            + "which matches those ids too — so the next release would publish them PERMANENTLY. "
+            + "Narrow the policy to one exact pattern per id in packages.push before adding a "
+            + "private id, then retire this test.");
+    }
+
+    /// <summary>
     /// The <c>.Abstractions</c> package really contains <c>lib/netstandard2.0/…dll</c> and its
     /// README — read out of a <c>.nupkg</c> this test packs, not inferred from the project file.
     /// </summary>

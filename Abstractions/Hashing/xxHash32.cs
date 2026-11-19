@@ -1,6 +1,6 @@
 using System;
 
-namespace Bennewitz.Ninja.AutoVersioning.SourceGenerators;
+namespace Bennewitz.Ninja.AutoVersioning;
 
 /// <summary>
 /// XXH32 (xxHash, 32-bit) by Yann Collet. Vendored rather than taken from System.IO.Hashing so
