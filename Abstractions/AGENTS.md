@@ -10,7 +10,9 @@ and drift are in [`PROGRESS.md`](../PROGRESS.md).
 | Path | What it holds |
 |---|---|
 | `Bennewitz.Ninja.AutoVersioning.Abstractions.csproj` | netstandard2.0, `AssemblyName` matching the package id, `RootNamespace` `Bennewitz.Ninja.AutoVersioning` |
-| `Versioning/` | `BuildVersion` and the CalVer algorithm, with its own `AGENTS.md`. Moved here from the repository root by step 2 |
+| `Versioning/` | `BuildVersion` and the CalVer algorithm, and `FuzzyBuildVersionComparer`, which is **public API**. With its own `AGENTS.md`. Moved here from the repository root by step 2 |
+| `Hashing/` | `HashCodeUtility` and a vendored `xxHash32`, both **`internal`**, with their own `AGENTS.md`. Moved here on 2026-11-19 when the comparer was restored: the comparer is published, the machinery behind its `GetHashCode` is not. ⚠ BCL types only, so this package still packs with an **empty dependency group** |
+| `README.md` | The package's own nuget.org page, `plans/00002` decision 12. ⛔ **Absolute links only** |
 
 ## Invariants
 

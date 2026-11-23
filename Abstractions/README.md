@@ -77,6 +77,29 @@ ran. See
 [`docs/MultiProjectBuildTimestamps.md`](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/blob/main/docs/MultiProjectBuildTimestamps.md),
 which also measures what a clock-stamped build does across a large solution.
 
+## Comparing two stamps
+
+`FuzzyBuildVersionComparer` calls two versions equal when everything but the revision matches and the
+revisions are within a tolerance. `Default` is 30 minutes:
+
+```csharp
+if (FuzzyBuildVersionComparer.Default.Equals(mine, theirs))
+{
+    // same build, near enough
+}
+
+var strict = new FuzzyBuildVersionComparer(TimeSpan.FromMinutes(2));
+```
+
+It decodes `HHmm` before comparing, so 09:59 and 10:00 are one minute apart rather than the 41 their
+raw integers suggest.
+
+⚠ **The relation is not transitive**, as no tolerance-based equality is: with a 3-minute tolerance
+10:00 equals 10:03 and 10:03 equals 10:06, but 10:00 does not equal 10:06. So do not deduplicate by
+sorting and comparing neighbours, and do not expect a `HashSet` to group what you meant —
+`GetHashCode` leaves the revision out, which is the only contract a hash can keep under a relation
+like this.
+
 ## Links
 
 - [Source and issues](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning)

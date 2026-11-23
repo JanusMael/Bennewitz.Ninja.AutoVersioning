@@ -53,10 +53,16 @@ machinery behind it is not.
 | `FuzzyBuildVersionComparer.GetHashCode` leaves `Revision` out | Two versions it calls equal must hash alike; the relation is not transitive, as its remarks say | `FuzzyBuildVersionComparerTests.EqualInstancesHashAlike`, and `TheRelationIsDeliberatelyNotTransitive` for the warning itself |
 | `FuzzyBuildVersionComparer` decodes `HHmm` before comparing revisions | 09:59 and 10:00 are one minute apart; the integers 959 and 1000 are 41 apart. Comparing them raw is wrong in both directions | `FuzzyBuildVersionComparerTests.TheRevisionIsDecodedFromHHmm_NotComparedAsAnInteger`, proven red by returning the revision undecoded |
 
-These types are public but reach no consumer *yet*: the package has no `lib/`, so `TryGetFromFile` is
-callable only from this repository's tests. **`plans/00002` is the approved plan that closes that**,
-by shipping them in `Bennewitz.Ninja.AutoVersioning.Abstractions`. Progress and drift are in
-`PROGRESS.md`.
+**These types reach a consumer now.** `Bennewitz.Ninja.AutoVersioning.Abstractions` packs them into
+`lib/netstandard2.0`, and `Tests/…/Packaging/PackagedConsumerTests.cs` proves it the only way that
+counts: a one-project consumer restores the **`.nupkg`** from a local feed through a real
+`PackageReference`, is stamped by the generator, and reads its own stamp back with `TryGetFromFile`.
+That test is red when the package carries no `lib/`.
+
+⚠ **The surface is still changeable today and permanent the moment it is published.** The id does
+not exist on nuget.org until `plans/00002` step 7's release, which is the last point at which a
+member can be renamed, removed or made `internal` without breaking somebody. Progress and drift are
+in `PROGRESS.md`.
 
 ## What reading a stamp back now answers
 

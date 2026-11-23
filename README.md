@@ -147,6 +147,30 @@ The generator uses **CalVer**: `YEAR.QUARTER.MMDD.HHmm`
 | Build | `429` | Month + day (`MMdd` as integer) |
 | Revision | `1435` | Hour + minute (`HHmm` as integer) |
 
+### Reading a stamp back
+
+The generator ships as an analyzer: your *compiler* loads it, and your *code* never sees it — so nothing in your project can turn one of those versions back into the moment it was stamped. The companion package [`Bennewitz.Ninja.AutoVersioning.Abstractions`](https://www.nuget.org/packages/Bennewitz.Ninja.AutoVersioning.Abstractions) is the small library that can.
+
+```xml
+<PackageReference Include="Bennewitz.Ninja.AutoVersioning.Abstractions" Version="x.x.x" />
+```
+
+```csharp
+using Bennewitz.Ninja.AutoVersioning;
+
+var assembly = new FileInfo(typeof(Thing).Assembly.Location);
+
+if (BuildVersion.TryGetFromFile(assembly, out var version))
+{
+    Console.WriteLine(version!.Version);       // 2026.4.1119.1613
+    Console.WriteLine(version.BuildDateTime);  // the moment this assembly was stamped
+}
+```
+
+It targets `netstandard2.0`, carries no dependencies, and neither package requires the other — install either on its own, though reading a stamp back is of limited use if nothing is stamping it. `TryGetFromFile` returns `false` rather than throwing for a version it does not recognise, such as an unstamped `1.0.0.0`, so it is safe to call on any assembly. Its [own README](https://www.nuget.org/packages/Bennewitz.Ninja.AutoVersioning.Abstractions) documents the rest.
+
+> The job it exists for: **asserting in your own tests that a built artifact carries the stamp this build gave it.**
+
 ---
 
 ## How It Works

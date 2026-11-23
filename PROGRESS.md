@@ -507,7 +507,7 @@ maintainer-only questions were settled the same day and are in the decisions tab
 | 2 · The new project and the move | **done** | Below |
 | 3 · Packaging | **done** | Below |
 | 4 · A consumer test over the `.nupkg` | **done**; 111 of 111, and proven red | Below |
-| 5 · The documents | not started | |
+| 5 · The documents | **done** 2026-11-23 | Below |
 | 6 · Glob Patterns widened, and a preflight | **widening done** 2026-11-19; preflight not yet run | Below |
 | 7 · A release | not started | |
 
@@ -595,6 +595,24 @@ had only ever been **described** in its remarks:
 - **The relation is deliberately not transitive.** With a 3-minute tolerance 10:00≡10:03 and
   10:03≡10:06 but 10:00≢10:06 — asserted, so the warning against deduplicating by sorting is a test
   rather than a sentence.
+
+### Step 5, as built — the documents
+
+| Document | What changed |
+|---|---|
+| `README.md` | A **Reading a stamp back** section after *Version Format*: the companion id, a `PackageReference`, the five-line call, and that neither package requires the other. It is the packed nuget.org description, so every link in it is absolute |
+| `Abstractions/README.md` | A **Comparing two stamps** section. `FuzzyBuildVersionComparer` became public API on 2026-11-19, *after* this README was written, so the package's own page documented a surface it did not have. ⚠ The non-transitivity is stated there as a consumer-facing warning, not as a remark: a tolerance equality that a reader deduplicates with is the way this type gets misused |
+| `Abstractions/AGENTS.md` | Its path table listed `Versioning/` alone and never gained `Hashing/`, which moved in on 2026-11-19. Both rows now say what is public and what is `internal`, and `README.md` has a row of its own |
+| `Abstractions/Versioning/AGENTS.md` | Its closing paragraph still said these types *"reach no consumer yet"*, which step 2 made false and step 4 disproved. It now names `PackagedConsumerTests` as the proof — ⚠ **and says the surface stays changeable until step 7 publishes it**, which is the only remaining window |
+| `PROGRESS.md` | This section; the step table; and the old finding *"`TryGetFromFile` is correct but unreachable by consumers"*, which still read as live and still described `plans/00002` as an unapproved draft with four open questions |
+
+⚠ **No nuget.org badge for the new id yet.** The one in `README.md` is for the generator; a second
+would render as *invalid* on every page that shows it until step 7 publishes the id, including the
+packed description on nuget.org itself. It goes in after the release, not before.
+
+**Verified:** `check` conforms, 111 of 111 tests pass, and `assert-packages` over a fresh pack of
+both ids reports two packages, both declared, **both READMEs linking absolutely** — which is the
+check that would have caught a relative link in either new section.
 
 ### Step 4, as built — a consumer really calls it
 
@@ -831,6 +849,12 @@ signals in logs from any build against `main`, or against whatever release first
 
 ### `BuildVersion.TryGetFromFile` is correct but unreachable by consumers
 
+✅ **Closed in code 2026-11-19, and closed for consumers at `plans/00002` step 7's release.**
+`Bennewitz.Ninja.AutoVersioning.Abstractions` ships `lib/netstandard2.0`, and
+`PackagedConsumerTests` proves a consumer restoring the `.nupkg` can call `TryGetFromFile`. The
+section below is the finding as it stood, kept for the reasoning that chose the route; the live
+state is `## plans/00002` above.
+
 The intent is for consumers to call it from their own tests to read the stamp back off a built
 binary. They cannot. `Package.nuspec` ships the assembly to `analyzers\dotnet\cs` only, with
 `developmentDependency: true` and `IncludeBuildOutput=false`, so the compiler loads it and it never
@@ -841,12 +865,11 @@ repo calls `TryGetFromFile` or references `Bennewitz.Ninja.AutoVersioning.Source
 `plans/00001` scopes it out deliberately, fixing only what `TryGetFromFile` computes, not what
 reaches a consumer.
 
-📋 **[`plans/00002`](plans/00002-tryget-from-file-reaches-a-consumer.md) is the plan, written
-2026-11-16 and `draft, awaiting approval`** — so it is still edited in place, and nothing in it is
-implemented. It carries four questions under *To settle before approval* that want answers with
-evidence first: whether `BuildVersion` should have anything made `internal` before its public surface
-becomes a supported API, whether AssemblyQuality's rules apply to a second shipped assembly, whether
-`Pack.ps1` packs both ids, and whether the new id needs a README of its own.
+📋 **[`plans/00002`](plans/00002-tryget-from-file-reaches-a-consumer.md) is the plan**, written
+2026-11-16, **approved 2026-11-17 and frozen**. Its four draft questions were all settled with
+evidence before approval — the public surface trimmed (decision 8), AssemblyQuality pinned to the
+generator (decision 9), `Pack.ps1` naming both ids, and a README of its own (decision 12). Steps 0
+to 5 are done; what remains is the preflight dispatch and the release.
 
 ⛔ **One correction to carry into that plan.** The preference list below used to say the
 `.Abstractions` option needs "its own nuget.org trusted-publishing policy". It does not, and acting
