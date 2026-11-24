@@ -534,6 +534,15 @@ fire by adding an id and watching it fail. `packages.local`'s own comment now sa
 **Not done:** the blank-`version` dispatch preflight. It cannot detect coverage, but it does prove
 the login still works and prints the ids a tag would publish, now two.
 
+✅ **Every field of the policy has now been verified**, which is as far as anything short of the push
+can go. Owner, repository, workflow file and a blank environment were proven by the preflight of
+2026-11-11 (run `43050490199`, which logged in and published nothing); the Glob Patterns by the
+maintainer's reading of 2026-11-19 and again 2026-11-24 (`Bennewitz.Ninja.AutoVersioning*`, covering
+both ids); the Scopes by the maintainer 2026-11-24, both ticked. ⛔ **What no check reaches remains
+unchanged:** a preflight's token exchange happens before any package id is considered, so only the
+push can prove the policy admits `.Abstractions` — and by then the generator has published
+permanently.
+
 ### Step 0, as read — the pattern does not cover the second id
 
 ⛔ **The policy's *Glob Patterns and Packages* field reads `Bennewitz.Ninja.AutoVersioning`, a bare
@@ -553,9 +562,24 @@ today, so a wildcard is harmless today and a trap the first time a local-feed-on
 which point it would be published permanently on the next release. Exactness here matches the
 repository's existing refusal to push a `*.nupkg` glob.
 
-⚠ **Still unread, and needed before step 6:** the same policy's **Scopes**. `.Abstractions` is a
-*new* id, so the policy must carry **Publish new packages**, not only *Publish new versions of
-existing packages*. `docs/publishing.md` already states this; nobody has confirmed the live value.
+✅ **The policy's Scopes were confirmed by the maintainer 2026-11-24: both are ticked** — *Publish
+new packages* and *Publish new versions of existing packages*, which is what `docs/publishing.md`'s
+field table requires. That was the last unread field on the policy, and it mattered because **the
+two ids are in different states on nuget.org.** Measured anonymously the same day, against the flat
+container:
+
+| Id | Index | What the release does to it |
+|---|---|---|
+| `Bennewitz.Ninja.AutoVersioning` | `200` | A new **version** of an existing id |
+| `Bennewitz.Ninja.AutoVersioning.Abstractions` | `404` | A new **id**, claimed permanently |
+
+⛔ A scope limited to new versions of existing packages would therefore have matched the generator
+and **not** `.Abstractions` — publishing the first permanently and rejecting the second in the same
+`dotnet nuget push`. `docs/publishing.md`: *"every id is new until the first release lands."*
+
+⭐ It also fixes where the version floor comes from: `release-target.cs` reads the newest listed
+version per id, so the floor is the generator's `2026.4.1116`, while the `404` means `.Abstractions`
+has no floor at all — checked 2026-11-16 and confirmed by the probe above.
 
 ### Drift from decision 8 — `FuzzyBuildVersionComparer` is restored, and public
 
