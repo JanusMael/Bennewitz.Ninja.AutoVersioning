@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| Latest release | `v2026.4.1116` — `plans/00001`: the Debug day-hold, and `BNAV05`, **a breaking change**. **nuget.org lists it, confirmed 2026-11-17.** Do not read the green workflow as the release: the push logged `Created` and `Your package was pushed` at 15:47 CST on 2026-11-16, and a probe 17 minutes later still read `404` from the flat container, the package page and the registration index — NuGet's validation had not finished, and a failed validation is indistinguishable from a slow one to anyone but the owner. The one before, `v2026.4.1031`, was the sync to Bennewitz.Ninja.Templates `2026.4.1031`; `v2026.3.928` was the `BNAV` rename |
-| `main` | **At `v2026.4.1116`, plus two documentation commits, `d5549c6` and `5216670`** — the stamp-spread paragraph of `docs/MultiProjectBuildTimestamps.md`, settled after it was wrong three times; nothing the package ships changes, so no release follows. `v2026.4.1116` itself is `plans/00001`. **Before that release** came the syncs to Bennewitz.Ninja.Templates `2026.4.1103`, `2026.4.1111`, `2026.4.1113` and `2026.4.1114`, and the catch-up with the bbpkg template of 2026-11-11 (JanusMael/Bennewitz.Ninja.AutoVersioning#10). **The sync to `2026.4.1114`** (2026-11-16, on the maintainer's word, from the Templates session): `Bennewitz.Ninja.CodeQuality` is raised from `2026.4.1111` to `2026.4.1113`, whose `BNCQ1009` and `BNCQ3001` now follow a delegate held in a local to its body; the restore resolves `2026.4.1113`, and the analyzer loads into both compilations and reports nothing. `docs/publishing.md` takes the template's version-floor sentences under "Choosing the version" and its two floor rows in the failure table. The scripts did not change in that release, and `scripts/repo-conventions.cs` and `scripts/release-target.cs` still match the template by SHA-256. Measured as CI runs it: the build with warnings as errors, 0 warnings, 55 of 55 tests, pack, `assert-packages`, and `check` conforms. **The sync to `2026.4.1113`** (2026-11-13, on the maintainer's word, from the Templates session): `scripts/repo-conventions.cs` and `scripts/release-target.cs` are that release's, byte for byte. `resolve` now refuses a version below the newest nuget.org lists for the id, unless nuget.org already lists it (a re-run); tried against nuget.org, whose newest is `2026.4.1031`: `v2026.4.1113` resolves, `v2026.4.1031` passes as a re-run, `v2026.4.1030` and `v2026.3.702` are refused with the floor message. `check` now also asks for the `Bennewitz.Ninja.CodeQuality` pin, which is raised from `2026.4.1104` to `2026.4.1111`, every rule at its default, the family's decision of 2026-11-10: the analyzer loads into both compilations here and reports nothing. The new floor is an invariant row in `AGENTS.md` and is named in `scripts/AGENTS.md` and `release.yml`. Measured as CI runs it: the build with warnings as errors, 0 warnings, 55 of 55 tests, pack, `assert-packages`, and `check` conforms. The sync to `2026.4.1111` brought the checks that `packages.push` resolves through `scripts/release-target.cs` and that `Bennewitz.Ninja.AssemblyQuality` is pinned. The catch-up brought `scripts/release-target.cs` and the template's `release.yml`, `docs/publishing.md`, and the `Packaging` and `AssemblyQuality` tests ported to MSTest; `NUGET_USER` is a repository variable (`JanusMael`), not a secret, so a 401 shows the name it tried, and the old secret is deleted. The first blank-version preflight, run `43050490199`, logged in and published nothing. `Microsoft.VisualStudio.Threading.Analyzers` 18.12.1 is referenced privately with only `VSTHRD101` and `VSTHRD110` on, the family's decision of 2026-11-03. Nothing the package ships changes, so no release follows from any of these syncs |
+| Latest release | `v2026.4.1124` — **`plans/00002`: a second package id, `Bennewitz.Ninja.AutoVersioning.Abstractions`**, which makes `BuildVersion.TryGetFromFile` callable by a consumer for the first time. **Both ids published from the one tag, and verified against nuget.org rather than from the green run** — see `## plans/00002`'s step 7 for the timings and for what a real install proved. ⭐ The `403` that nothing could rule out in advance did not happen: the wildcard policy admitted a brand-new id. Nothing the generator computes or stamps changed; its packed `README.md` and `docs/MultiProjectBuildTimestamps.md` did. ⛔ **Do not read a green workflow as a release** — `v2026.4.1116` logged `Created` and `Your package was pushed` and still read `404` 17 minutes later, and a failed validation is indistinguishable from a slow one to anyone but the owner. Before this: `v2026.4.1116` was `plans/00001` (the Debug day-hold and `BNAV05`, **a breaking change**), listed 2026-11-17; `v2026.4.1031` the sync to Bennewitz.Ninja.Templates `2026.4.1031`; `v2026.3.928` the `BNAV` rename |
+| `main` | **At `v2026.4.1124`**, which the tag points at (`c05e00b`). Everything from `d5549c6` to `c05e00b` is `plans/00002` plus the stamp-spread corrections to `docs/MultiProjectBuildTimestamps.md`, settled in `e3f75e2` after being wrong three times. **History below, kept because it records what was synced from Bennewitz.Ninja.Templates and verified at the time.** `v2026.4.1116` itself is `plans/00001`. **Before that release** came the syncs to Bennewitz.Ninja.Templates `2026.4.1103`, `2026.4.1111`, `2026.4.1113` and `2026.4.1114`, and the catch-up with the bbpkg template of 2026-11-11 (JanusMael/Bennewitz.Ninja.AutoVersioning#10). **The sync to `2026.4.1114`** (2026-11-16, on the maintainer's word, from the Templates session): `Bennewitz.Ninja.CodeQuality` is raised from `2026.4.1111` to `2026.4.1113`, whose `BNCQ1009` and `BNCQ3001` now follow a delegate held in a local to its body; the restore resolves `2026.4.1113`, and the analyzer loads into both compilations and reports nothing. `docs/publishing.md` takes the template's version-floor sentences under "Choosing the version" and its two floor rows in the failure table. The scripts did not change in that release, and `scripts/repo-conventions.cs` and `scripts/release-target.cs` still match the template by SHA-256. Measured as CI runs it: the build with warnings as errors, 0 warnings, 55 of 55 tests, pack, `assert-packages`, and `check` conforms. **The sync to `2026.4.1113`** (2026-11-13, on the maintainer's word, from the Templates session): `scripts/repo-conventions.cs` and `scripts/release-target.cs` are that release's, byte for byte. `resolve` now refuses a version below the newest nuget.org lists for the id, unless nuget.org already lists it (a re-run); tried against nuget.org, whose newest is `2026.4.1031`: `v2026.4.1113` resolves, `v2026.4.1031` passes as a re-run, `v2026.4.1030` and `v2026.3.702` are refused with the floor message. `check` now also asks for the `Bennewitz.Ninja.CodeQuality` pin, which is raised from `2026.4.1104` to `2026.4.1111`, every rule at its default, the family's decision of 2026-11-10: the analyzer loads into both compilations here and reports nothing. The new floor is an invariant row in `AGENTS.md` and is named in `scripts/AGENTS.md` and `release.yml`. Measured as CI runs it: the build with warnings as errors, 0 warnings, 55 of 55 tests, pack, `assert-packages`, and `check` conforms. The sync to `2026.4.1111` brought the checks that `packages.push` resolves through `scripts/release-target.cs` and that `Bennewitz.Ninja.AssemblyQuality` is pinned. The catch-up brought `scripts/release-target.cs` and the template's `release.yml`, `docs/publishing.md`, and the `Packaging` and `AssemblyQuality` tests ported to MSTest; `NUGET_USER` is a repository variable (`JanusMael`), not a secret, so a 401 shows the name it tried, and the old secret is deleted. The first blank-version preflight, run `43050490199`, logged in and published nothing. `Microsoft.VisualStudio.Threading.Analyzers` 18.12.1 is referenced privately with only `VSTHRD101` and `VSTHRD110` on, the family's decision of 2026-11-03. Nothing the package ships changes, so no release follows from any of these syncs |
 | Plans | `plans/` exists, with its own `AGENTS.md` and `CLAUDE.md` and a row in `AGENTS.md`'s Layout table. `scripts/repo-conventions.cs` counts untracked files, so those two are needed the moment the directory exists on disk, before anything in it is committed |
 | CI | green |
 
@@ -508,8 +508,84 @@ maintainer-only questions were settled the same day and are in the decisions tab
 | 3 · Packaging | **done** | Below |
 | 4 · A consumer test over the `.nupkg` | **done**; 111 of 111, and proven red | Below |
 | 5 · The documents | **done** 2026-11-23 | Below |
-| 6 · Glob Patterns widened, and a preflight | **widening done** 2026-11-19; preflight not yet run | Below |
-| 7 · A release | not started | |
+| 6 · Glob Patterns widened, and a preflight | **done** — widened 2026-11-19, preflight green 2026-11-24 (run `45504048724`) | Below |
+| 7 · A release | **done** — `v2026.4.1124`, both ids listed on nuget.org and installed for real | Below |
+
+### Step 7, as released — `v2026.4.1124`, two ids from one tag
+
+Tagged `v2026.4.1124` at `c05e00b` on the maintainer's word, 2026-11-24. Release run
+`45504428684`, every gate green before the push, and **both ids accepted**:
+
+```
+Pushing Bennewitz.Ninja.AutoVersioning.2026.4.1124.nupkg …             Created   Your package was pushed.
+Pushing Bennewitz.Ninja.AutoVersioning.Abstractions.2026.4.1124.nupkg  Created   Your package was pushed.
+```
+
+⭐ **No `403`, which was the one gate nothing in this repository could reach.** A policy that failed
+to cover the new id would have published the generator permanently and rejected `.Abstractions` in
+the same command; the wildcard `Bennewitz.Ninja.AutoVersioning*` admitted a brand-new id. Step 6's
+preflight ran first and green (run `45504048724`, `RELEASING: false`, push and release steps
+skipped), which proved the login and, as always, nothing about coverage.
+
+**Verified against the feed, not the workflow.** Probed every 60 s from the push:
+
+| Face of nuget.org | When `2026.4.1124` appeared |
+|---|---|
+| Flat container, both ids | **~9 minutes.** At +8 the generator was listed and `.Abstractions` was not — the new id trailed by a minute |
+| `.nupkg` download, both ids | With the flat container |
+| Registration index, generator | With the flat container |
+| **Registration index, `.Abstractions`** | **Later still** — the client resolves `PackageReference` from this one, so the package was downloadable before it was installable |
+
+⛔ **Then a second lag on top of the first: NuGet's local HTTP cache.** The first install attempt
+failed `NU1102 … Found 12 version(s) in nuget.org [ Nearest version: 2026.4.1116 ]` **for the
+generator**, whose registration index already carried the new version — a cached service response,
+not a feed state. `dotnet restore --no-http-cache` resolved it immediately afterwards.
+
+📏 **A real install, which is the only evidence that counts.** A scratch console app outside the
+repository, both packages by `PackageReference` from nuget.org, no local feed and no path to
+anything here:
+
+```
+stamp    = 2026.4.1124.1702
+built    = 2026-11-24 17:02:00 (UTC+00:00)
+comparer = True
+```
+
+The published generator stamped it, the published `.Abstractions` read that stamp back off the built
+assembly, and `FuzzyBuildVersionComparer` was reachable. `plans/00002`'s whole purpose, exercised
+from outside.
+
+**Release notes were written by hand, as the rule says.** ⚠ `--generate-notes` has now been useless
+three times, and this time in a new way: it produced **one line**, a compare link, because all 14
+commits since `v2026.4.1116` landed directly on `main` and it had no pull requests to list. That is
+the empty case this file predicted. The hand-written body was in place within a minute of the run.
+
+⭐ `README.md` gained the new id's nuget.org badge in the same change as this record — it was
+deliberately held back until the package existed, because a badge for an unpublished id renders as
+*invalid* on nuget.org's own rendering of that README.
+
+### Findings to relay to Bennewitz.Ninja.Templates, not to patch here
+
+⛔ **`docs/publishing.md` is a copy of the template's**, so these go upstream; editing them here is
+drift.
+
+- **"Verify against nuget.org" needs to say which nuget.org.** The flat container, the `.nupkg`
+  itself and the registration index index at different times, and the client reads the slowest, so a
+  flat-container `200` is not yet an installable package. The runbook's verification step should
+  check the registration index, or simply install the package.
+- **A stale local HTTP cache can report the wrong "nearest version"** for a package that is fully
+  indexed, which reads exactly like a feed that has not caught up. `--no-http-cache` separates the
+  two in one command.
+
+### Step 4's finding, still open and now permanent-ish
+
+⚠ **`BuildVersion.BuildDateTime` carries a `+00:00` offset it cannot know.** Observed in the install
+above: the digits are the build machine's **local** wall clock (17:02 CST) while the offset reads
+UTC. A stamp records `MMdd`/`HHmm` and no zone, so the zero offset is a claim the data does not
+support, and `BuildDateTime.ToUniversalTime()` is wrong by the build machine's offset. `.Date` and
+`BuildTime` are unaffected, which is why nothing caught it. **Pre-existing, not introduced by this
+release**, and now shipped in a public API — so changing it is a behaviour change for a future
+version, not a fix to slip in.
 
 ### Step 6, half done — the policy is widened
 

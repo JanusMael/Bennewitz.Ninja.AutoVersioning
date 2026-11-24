@@ -3,6 +3,7 @@
 A [Roslyn incremental source generator](https://learn.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) that injects assembly metadata attributes and build-time constants into .NET projects at compile time — no `AssemblyInfo.cs`, no disk writes, full IDE caching.
 
 [![NuGet](https://img.shields.io/nuget/v/Bennewitz.Ninja.AutoVersioning.svg)](https://www.nuget.org/packages/Bennewitz.Ninja.AutoVersioning)
+[![Abstractions](https://img.shields.io/nuget/v/Bennewitz.Ninja.AutoVersioning.Abstractions.svg?label=Abstractions)](https://www.nuget.org/packages/Bennewitz.Ninja.AutoVersioning.Abstractions)
 [![CI](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/actions/workflows/ci.yml/badge.svg)](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/actions/workflows/ci.yml)
 
 ## Requirements
