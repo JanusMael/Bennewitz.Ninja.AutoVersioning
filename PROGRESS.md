@@ -564,10 +564,14 @@ the empty case this file predicted. The hand-written body was in place within a 
 deliberately held back until the package existed, because a badge for an unpublished id renders as
 *invalid* on nuget.org's own rendering of that README.
 
-### Findings to relay to Bennewitz.Ninja.Templates, not to patch here
+### Findings relayed to Bennewitz.Ninja.Templates, 2026-11-26 — ✅ done, not patched here
 
-⛔ **`docs/publishing.md` is a copy of the template's**, so these go upstream; editing them here is
-drift.
+⛔ **`docs/publishing.md` is a copy of the template's**, so these went upstream; editing them here
+would be drift. **Landed in Bennewitz.Ninja.Templates as `62276a8`**, in
+`templates/bbpkg/docs/publishing.md` and that repository's `PROGRESS.md`, with its root suite at 276
+of 276 and `check` conforming. ⚠ **This repository's copy is therefore one template change behind,
+deliberately** — it catches up at the next sync, which follows a Templates *release*; `2026.4.1126`
+went out before this landed, so the next one carries it.
 
 - **"Verify against nuget.org" needs to say which nuget.org.** The flat container, the `.nupkg`
   itself and the registration index index at different times, and the client reads the slowest, so a
