@@ -837,10 +837,12 @@ assembly**, so the analyzer gains no reference and no `CS0436` from the same typ
 source and reference. Confirmed by the build producing
 `Abstractions/bin/Release/netstandard2.0/…Abstractions.dll`.
 
-⚠ **How the second id gets PACKED is still open, and it is step 3's first problem.** `dotnet pack`
-at the root packs the root project alone, so step 3's "two ids" verification needs either a solution
-file or an explicit second pack — and `release.yml` and `ci.yml` came from the bbpkg template, so
-editing them here is drift from Bennewitz.Ninja.Templates rather than a local change.
+⚠ **How the second id gets PACKED was step 2's open question and step 3's first problem** — ✅ closed
+there, by naming every packable project at each pack step. `dotnet pack` at the root packs the root
+project alone, so "two ids" needed either a solution file or an explicit second pack; and
+`release.yml` and `ci.yml` came from the bbpkg template, so editing them looked like drift from
+Bennewitz.Ninja.Templates. It was not: both files already named the root csproj, so they were
+repo-specific at that step already.
 
 ⛔ **2. A nested project's `obj\` is not excluded from the root glob.** `Abstractions\**` is now in
 `DefaultItemExcludes`, and the sources are linked back explicitly with
